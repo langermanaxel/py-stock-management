@@ -32,12 +32,20 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 
 ## 🛠️ Stack Tecnológico
 
-- **🐍 Backend**: Flask (Python) con arquitectura modular
-- **🗄️ Base de Datos**: SQLite con SQLAlchemy ORM
+- **🐍 Backend**: Flask 3.0.0 (Python) con arquitectura modular
+- **🗄️ Base de Datos**: SQLite con SQLAlchemy ORM + Flask-Migrate
 - **🎨 Frontend**: HTML5, CSS3, JavaScript Vanilla
 - **🎭 UI/UX**: CSS personalizado con variables y sistema responsivo
 - **🎯 Iconos**: Font Awesome para interfaz moderna
-- **🔄 API**: RESTful con validación de datos
+- **🔄 API**: RESTful con validación de datos y CORS configurado
+- **⚙️ Configuración**: Variables de entorno con python-dotenv
+
+### 📦 Dependencias con Versiones Específicas
+- **Flask==3.0.0**: Framework web principal
+- **Flask-SQLAlchemy==3.1.1**: ORM para manejo de base de datos
+- **Flask-CORS==4.0.0**: Manejo de CORS para API
+- **Flask-Migrate==4.0.5**: Sistema de migraciones de base de datos
+- **python-dotenv==1.0.0**: Carga de variables de entorno
 
 ## 📋 Requisitos del Sistema
 
@@ -46,10 +54,60 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 - SQLAlchemy 1.4+
 - Navegador web moderno
 
+## 🔧 Configuración de Variables de Entorno
+
+### 📋 Archivo de Configuración
+
+1. **Copia el archivo de ejemplo**:
+   ```bash
+   cp env.example .env
+   ```
+
+2. **Configura las variables según tu entorno**:
+   ```bash
+   # 🗄️ Base de Datos
+   DATABASE_URL=sqlite:///instance/stock_management.db
+   
+   # 🌐 Configuración Flask
+   SECRET_KEY=tu-clave-secreta-super-segura-aqui
+   FLASK_ENV=development
+   DEBUG=True
+   
+   # 📝 CORS
+   CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:5000
+   ```
+
+### 🔍 Variables Disponibles
+
+| Variable | Descripción | Valor por Defecto |
+|----------|-------------|-------------------|
+| `DATABASE_URL` | URI de conexión a la base de datos | `sqlite:///instance/stock_management.db` |
+| `SECRET_KEY` | Clave secreta de Flask | Auto-generada |
+| `DEBUG` | Modo debug | `True` |
+| `FLASK_ENV` | Entorno de Flask | `development` |
+| `CORS_ORIGINS` | Orígenes permitidos para CORS | `localhost:3000,127.0.0.1:5000` |
+
+### 🗄️ Configuración de Base de Datos
+
+**Para SQLite (recomendado para desarrollo):**
+   ```bash
+DATABASE_URL=sqlite:///instance/stock_management.db
+   ```
+
+**Para PostgreSQL (producción):**
+   ```bash
+DATABASE_URL=postgresql://usuario:password@localhost:5432/stock_management
+   ```
+
+**Para MySQL:**
+   ```bash
+DATABASE_URL=mysql://usuario:password@localhost:3306/stock_management
+   ```
+
 ## 🚀 Instalación Rápida
 
 ### 1. 📥 Clonar el repositorio
-```bash
+   ```bash
 git clone https://github.com/tu-usuario/stock_management.git
 cd stock_management
 ```
@@ -71,12 +129,37 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. 🗄️ Inicializar base de datos
-```bash
-# Crear las tablas
-python -c "from app import create_app; app = create_app(); app.app_context().push(); from app.database import db; db.create_all()"
+### 4. 🗄️ Inicializar la base de datos con migraciones
 
-# Cargar datos de ejemplo (opcional)
+#### Configurar Flask-Migrate
+```bash
+# Inicializar el repositorio de migraciones
+flask db init
+
+# Crear la primera migración
+flask db migrate -m "Migración inicial"
+
+# Aplicar la migración
+flask db upgrade
+```
+
+#### 📝 Comandos de Migración Útiles
+```bash
+# Crear nueva migración después de cambios en modelos
+flask db migrate -m "Descripción del cambio"
+
+# Aplicar migraciones pendientes
+flask db upgrade
+
+# Ver historial de migraciones
+flask db history
+
+# Revertir a migración anterior
+flask db downgrade
+```
+
+#### 📊 Cargar datos de ejemplo (opcional)
+```bash
 python load_sample_data.py
 ```
 

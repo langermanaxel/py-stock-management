@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
+from flask_migrate import Migrate
 from .database import db
 from .config import Config
 
@@ -13,6 +14,9 @@ def create_app():
     CORS(app, resources={r"/api/*": {"origins": ["http://127.0.0.1:8080", "http://localhost:8080"]}})
 
     db.init_app(app)
+    
+    # Configurar Flask-Migrate
+    migrate = Migrate(app, db)
 
     # Importar modelos después de inicializar db
     from .models.category import Category
