@@ -1,1318 +1,959 @@
-// Configuración de la API
-const API_BASE_URL = 'http://127.0.0.1:8080/api';
-
-// Clase principal de la aplicación
-class StockManagementApp {
-    constructor() {
-        this.currentTab = 'dashboard';
-        this.categories = [];
-        this.products = [];
-        this.stock = [];
-        this.orders = [];
-        this.purchases = [];
+// Sistema de Notificaciones Toast con Alpine.js
+function toastManager() {
+    return {
+        toasts: [],
+        nextId: 1,
         
-        this.init();
-    }
-
-    async init() {
-        this.setupTheme();
-        this.setupEventListeners();
-        await this.loadDashboardData();
-        this.showTab('dashboard');
-    }
-
-    setupTheme() {
-        // Verificar si hay un tema guardado en localStorage
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        this.setTheme(savedTheme);
-        
-        // Configurar el botón de cambio de tema
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        
-        if (themeToggle && themeIcon) {
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                this.setTheme(newTheme);
-            });
-        }
-    }
-
-    setTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-        
-        // Actualizar el icono del botón
-        const themeIcon = document.getElementById('themeIcon');
-        if (themeIcon) {
-            if (theme === 'dark') {
-                themeIcon.className = 'fas fa-sun';
-                themeIcon.parentElement.title = 'Cambiar a modo claro';
-            } else {
-                themeIcon.className = 'fas fa-moon';
-                themeIcon.parentElement.title = 'Cambiar a modo oscuro';
-            }
-        }
-    }
-
-    setupEventListeners() {
-        // Navegación por pestañas
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
-                this.showTab(tabName);
-            });
-        });
-
-        // Formularios
-        this.setupFormListeners();
-        
-        // Modales
-        this.setupModalListeners();
-    }
-
-    setupModalListeners() {
-        // Cerrar modales
-        document.querySelectorAll('.close').forEach(closeBtn => {
-            closeBtn.addEventListener('click', () => {
-                this.closeAllModals();
-            });
-        });
-
-        // Cerrar modales al hacer clic fuera
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                this.closeAllModals();
-            }
-        });
-
-        // Formularios de edición
-        const editCategoryForm = document.getElementById('editCategoryForm');
-        if (editCategoryForm) {
-            editCategoryForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.updateCategory();
-            });
-        }
-
-        const editProductForm = document.getElementById('editProductForm');
-        if (editProductForm) {
-            editProductForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.updateProduct();
-            });
-        }
-
-        const editStockForm = document.getElementById('editStockForm');
-        if (editStockForm) {
-            editStockForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.updateStockFromModal();
-            });
-        }
-    }
-
-    setupFormListeners() {
-        // Formulario de categorías
-        const categoryForm = document.getElementById('categoryForm');
-        if (categoryForm) {
-            categoryForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.createCategory();
-            });
-        }
-
-        // Formulario de productos
-        const productForm = document.getElementById('productForm');
-        if (productForm) {
-            productForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.createProduct();
-            });
-        }
-
-        // Formulario de órdenes de compra
-        const purchaseForm = document.getElementById('purchaseForm');
-        if (purchaseForm) {
-            purchaseForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.createPurchaseOrder();
-            });
-        }
-
-        // Formulario de órdenes de venta
-        const orderForm = document.getElementById('orderForm');
-        if (orderForm) {
-            orderForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                // Verificar si hay productos agregados
-                const itemsInput = document.getElementById('orderItemsInput');
-                const items = JSON.parse(itemsInput.value || '[]');
-                
-                if (items.length === 0) {
-                    this.showAlert('Debe agregar al menos un producto antes de crear la orden', 'error');
-                    return;
-                }
-                
-                // Si hay productos, permitir la creación de la orden
-                this.createOrder();
-            });
-        }
-    }
-
-    closeAllModals() {
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.style.display = 'none';
-        });
-    }
-
-    async loadDashboardData() {
-        try {
-            await Promise.all([
-                this.loadCategories(),
-                this.loadProducts(),
-                this.loadStock(),
-                this.loadPurchases()
-            ]);
-            this.updateDashboard();
-        } catch (error) {
-            console.error('Error cargando datos del dashboard:', error);
-            this.showAlert('Error cargando datos del dashboard', 'error');
-        }
-    }
-
-    async loadCategories() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/categories/`);
-            if (response.ok) {
-                this.categories = await response.json();
-            }
-        } catch (error) {
-            console.error('Error cargando categorías:', error);
-        }
-    }
-
-    async loadProducts() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/products/`);
-            if (response.ok) {
-                this.products = await response.json();
-            }
-        } catch (error) {
-            console.error('Error cargando productos:', error);
-        }
-    }
-
-    async loadStock() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/stock/`);
-            if (response.ok) {
-                this.stock = await response.json();
-            }
-        } catch (error) {
-            console.error('Error cargando stock:', error);
-        }
-    }
-
-    async loadOrders() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders/`);
-            if (response.ok) {
-                this.orders = await response.json();
-            }
-        } catch (error) {
-            console.error('Error cargando órdenes:', error);
-        }
-    }
-
-    async loadPurchases() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/purchases/`);
-            if (response.ok) {
-                this.purchases = await response.json();
-            }
-        } catch (error) {
-            console.error('Error cargando órdenes de compra:', error);
-        }
-    }
-
-    showTab(tabName) {
-        // Ocultar todas las pestañas
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-
-        // Mostrar la pestaña seleccionada
-        const selectedTab = document.querySelector(`[data-tab="${tabName}"]`);
-        const selectedContent = document.getElementById(`${tabName}Content`);
-        
-        if (selectedTab && selectedContent) {
-            selectedTab.classList.add('active');
-            selectedContent.classList.add('active');
-            this.currentTab = tabName;
+        showToast(type, title, message, duration = 5000) {
+            const toast = {
+                id: this.nextId++,
+                type,
+                title,
+                message,
+                visible: true,
+                timestamp: Date.now()
+            };
             
-            // Cargar datos específicos de la pestaña
-            this.loadTabData(tabName);
-        }
-    }
-
-    async loadTabData(tabName) {
-        switch (tabName) {
-            case 'categories':
-                await this.loadCategories();
-                this.renderCategories();
-                break;
-            case 'products':
-                await this.loadCategories();
-                await this.loadProducts();
-                this.renderProducts();
-                this.fillProductCategorySelect(); // Llenar el select de categorías
-                break;
-            case 'stock':
-                await this.loadStock();
-                this.renderStock();
-                break;
-            case 'orders':
-                await this.loadProducts(); // Cargar productos para el select
-                await this.loadPurchases();
-                this.renderOrders();
-                this.fillOrderProductSelect(); // Llenar el select de productos
-                this.updateCreateOrderButton(); // Actualizar estado del botón
-                break;
-            case 'purchases':
-                await this.loadProducts(); // Cargar productos para el select
-                await this.loadPurchases();
-                this.renderPurchases();
-                this.fillPurchaseProductSelect(); // Llenar el select de productos
-                break;
-        }
-    }
-
-    async createCategory() {
-        const form = document.getElementById('categoryForm');
-        const formData = new FormData(form);
-        const categoryData = {
-            name: formData.get('name')
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/categories/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(categoryData)
-            });
-
-            if (response.ok) {
-                this.showAlert('Categoría creada exitosamente', 'success');
-                form.reset();
-                await this.loadCategories();
-                this.renderCategories();
-                this.updateDashboard();
-                
-                // Si estamos en la pestaña de productos, actualizar el select de categorías
-                if (this.currentTab === 'products') {
-                    this.fillProductCategorySelect();
-                }
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error creando categoría:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    async updateCategory() {
-        const form = document.getElementById('editCategoryForm');
-        const categoryId = document.getElementById('editCategoryId').value;
-        const categoryName = document.getElementById('editCategoryName').value;
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name: categoryName })
-            });
-
-            if (response.ok) {
-                this.showAlert('Categoría actualizada exitosamente', 'success');
-                this.closeAllModals();
-                await this.loadCategories();
-                this.renderCategories();
-                this.updateDashboard();
-                
-                // Si estamos en la pestaña de productos, actualizar el select de categorías
-                if (this.currentTab === 'products') {
-                    this.fillProductCategorySelect();
-                }
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error actualizando categoría:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    async deleteCategory(id) {
-        if (!confirm('¿Está seguro de que desea eliminar esta categoría?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                this.showAlert('Categoría eliminada exitosamente', 'success');
-                await this.loadCategories();
-                this.renderCategories();
-                this.updateDashboard();
-                
-                // Si estamos en la pestaña de productos, actualizar el select de categorías
-                if (this.currentTab === 'products') {
-                    this.fillProductCategorySelect();
-                }
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error eliminando categoría:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    editCategory(id) {
-        const category = this.categories.find(c => c.id === id);
-        if (!category) return;
-
-        document.getElementById('editCategoryId').value = category.id;
-        document.getElementById('editCategoryName').value = category.name;
-        document.getElementById('editCategoryModal').style.display = 'block';
-    }
-
-    async createProduct() {
-        const form = document.getElementById('productForm');
-        const formData = new FormData(form);
-        const productData = {
-            name: formData.get('name'),
-            description: formData.get('description'),
-            price: parseFloat(formData.get('price')),
-            category_id: parseInt(formData.get('category_id')),
-            min_stock: parseInt(formData.get('min_stock') || 0)
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/products/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(productData)
-            });
-
-            if (response.ok) {
-                this.showAlert('Producto creado exitosamente', 'success');
-                form.reset();
-                await this.loadProducts();
-                this.renderProducts();
-                this.updateDashboard();
-                
-                // Si estamos en las pestañas de órdenes o compras, actualizar los selects de productos
-                if (this.currentTab === 'orders') {
-                    this.fillOrderProductSelect();
-                } else if (this.currentTab === 'purchases') {
-                    this.fillPurchaseProductSelect();
-                }
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error creando producto:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    async updateProduct() {
-        const form = document.getElementById('editProductForm');
-        const productId = document.getElementById('editProductId').value;
-        const productData = {
-            name: document.getElementById('editProductName').value,
-            description: document.getElementById('editProductDescription').value,
-            price: parseFloat(document.getElementById('editProductPrice').value),
-            category_id: parseInt(document.getElementById('editProductCategory').value),
-            min_stock: parseInt(document.getElementById('editProductMinStock').value || 0)
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(productData)
-            });
-
-            if (response.ok) {
-                this.showAlert('Producto actualizado exitosamente', 'success');
-                this.closeAllModals();
-                await this.loadProducts();
-                await this.loadStock();
-                this.renderProducts();
-                this.renderStock();
-                this.updateDashboard();
-                
-                // Si estamos en las pestañas de órdenes o compras, actualizar los selects de productos
-                if (this.currentTab === 'orders') {
-                    this.fillOrderProductSelect();
-                } else if (this.currentTab === 'purchases') {
-                    this.fillPurchaseProductSelect();
-                }
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error actualizando producto:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    async deleteProduct(id) {
-        if (!confirm('¿Está seguro de que desea eliminar este producto?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                this.showAlert('Producto eliminado exitosamente', 'success');
-                await this.loadProducts();
-                await this.loadStock();
-                this.renderProducts();
-                this.renderStock();
-                this.updateDashboard();
-                
-                // Si estamos en las pestañas de órdenes o compras, actualizar los selects de productos
-                if (this.currentTab === 'orders') {
-                    this.fillOrderProductSelect();
-                } else if (this.currentTab === 'purchases') {
-                    this.fillPurchaseProductSelect();
-                }
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error eliminando producto:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    editProduct(id) {
-        const product = this.products.find(p => p.id === id);
-        if (!product) return;
-
-        document.getElementById('editProductId').value = product.id;
-        document.getElementById('editProductName').value = product.name;
-        document.getElementById('editProductDescription').value = product.description;
-        document.getElementById('editProductPrice').value = product.price;
-        document.getElementById('editProductCategory').value = product.category_id;
+            this.toasts.push(toast);
+            
+            // Auto-remove después del tiempo especificado
+            setTimeout(() => {
+                this.removeToast(toast.id);
+            }, duration);
+            
+            return toast.id;
+        },
         
-        // Cargar categorías en el select
-        const categorySelect = document.getElementById('editProductCategory');
-        categorySelect.innerHTML = '<option value="">Seleccionar categoría</option>';
-        this.categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            if (category.id === product.category_id) {
-                option.selected = true;
+        removeToast(id) {
+            const index = this.toasts.findIndex(t => t.id === id);
+            if (index > -1) {
+                this.toasts.splice(index, 1);
             }
-            categorySelect.appendChild(option);
+        },
+        
+        getToastIcon(type) {
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-circle',
+                warning: 'fas fa-exclamation-triangle',
+                info: 'fas fa-info-circle'
+            };
+            return icons[type] || icons.info;
+        },
+        
+        // Métodos de conveniencia
+        success(title, message, duration) {
+            return this.showToast('success', title, message, duration);
+        },
+        
+        error(title, message, duration) {
+            return this.showToast('error', title, message, duration);
+        },
+        
+        warning(title, message, duration) {
+            return this.showToast('warning', title, message, duration);
+        },
+        
+        info(title, message, duration) {
+            return this.showToast('info', title, message, duration);
+        }
+    };
+}
+
+// Validador de Formularios con Alpine.js
+function formValidator() {
+    return {
+        formData: {},
+        errors: {},
+        
+        validateField(fieldName) {
+            const field = this.$el.querySelector(`[name="${fieldName}"]`);
+            if (!field) return;
+            
+            const value = field.value;
+            const rules = this.getFieldRules(fieldName);
+            
+            // Limpiar error previo
+            this.errors[fieldName] = null;
+            
+            // Aplicar validaciones
+            for (const rule of rules) {
+                const result = this.validateRule(value, rule);
+                if (result !== true) {
+                    this.errors[fieldName] = result;
+                    break;
+                }
+            }
+            
+            // Actualizar clases CSS
+            this.updateFieldClasses(field, fieldName);
+        },
+        
+        getFieldRules(fieldName) {
+            const rules = [];
+            const field = this.$el.querySelector(`[name="${fieldName}"]`);
+            
+            if (!field) return rules;
+            
+            // Reglas basadas en atributos HTML5
+            if (field.required) {
+                rules.push({ type: 'required', message: 'Este campo es requerido' });
+            }
+            
+            if (field.minLength) {
+                rules.push({ 
+                    type: 'minLength', 
+                    value: field.minLength, 
+                    message: `Mínimo ${field.minLength} caracteres` 
+                });
+            }
+            
+            if (field.maxLength) {
+                rules.push({ 
+                    type: 'maxLength', 
+                    value: field.maxLength, 
+                    message: `Máximo ${field.maxLength} caracteres` 
+                });
+            }
+            
+            if (field.min) {
+                rules.push({ 
+                    type: 'min', 
+                    value: parseFloat(field.min), 
+                    message: `Valor mínimo: ${field.min}` 
+                });
+            }
+            
+            if (field.step) {
+                rules.push({ 
+                    type: 'step', 
+                    value: parseFloat(field.step), 
+                    message: `Incremento: ${field.step}` 
+                });
+            }
+            
+            // Reglas específicas por campo
+            if (fieldName === 'email') {
+                rules.push({ 
+                    type: 'email', 
+                    message: 'Formato de email inválido' 
+                });
+            }
+            
+            if (fieldName === 'price' || fieldName === 'unit_price') {
+                rules.push({ 
+                    type: 'positive', 
+                    message: 'El precio debe ser positivo' 
+                });
+            }
+            
+            if (fieldName === 'quantity') {
+                rules.push({ 
+                    type: 'positive', 
+                    message: 'La cantidad debe ser positiva' 
+                });
+            }
+            
+            return rules;
+        },
+        
+        validateRule(value, rule) {
+            switch (rule.type) {
+                case 'required':
+                    return value.trim() !== '' ? true : rule.message;
+                    
+                case 'minLength':
+                    return value.length >= rule.value ? true : rule.message;
+                    
+                case 'maxLength':
+                    return value.length <= rule.value ? true : rule.message;
+                    
+                case 'min':
+                    return parseFloat(value) >= rule.value ? true : rule.message;
+                    
+                case 'step':
+                    const num = parseFloat(value);
+                    const step = rule.value;
+                    return (num % step) === 0 ? true : rule.message;
+                    
+                case 'email':
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    return emailRegex.test(value) ? true : rule.message;
+                    
+                case 'positive':
+                    return parseFloat(value) > 0 ? true : rule.message;
+                    
+                default:
+                    return true;
+            }
+        },
+        
+        updateFieldClasses(field, fieldName) {
+            field.classList.remove('success', 'error');
+            
+            if (this.errors[fieldName]) {
+                field.classList.add('error');
+            } else if (field.value.trim() !== '') {
+                field.classList.add('success');
+            }
+        },
+        
+        validateForm() {
+            const fields = this.$el.querySelectorAll('[name]');
+            let isValid = true;
+            
+            fields.forEach(field => {
+                this.validateField(field.name);
+                if (this.errors[field.name]) {
+                    isValid = false;
+                }
+            });
+            
+            return isValid;
+        },
+        
+        resetForm() {
+            this.formData = {};
+            this.errors = {};
+            this.$el.reset();
+            
+            // Limpiar clases CSS
+            const fields = this.$el.querySelectorAll('input, select, textarea');
+            fields.forEach(field => {
+                field.classList.remove('success', 'error');
+            });
+        }
+    };
+}
+
+// Variables globales
+let purchaseItems = [];
+let currentTab = 'dashboard';
+
+// Inicialización cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+});
+
+// Función de inicialización principal
+function initializeApp() {
+    loadTabData();
+    setupEventListeners();
+    updateDashboard();
+}
+
+// Configuración de event listeners
+function setupEventListeners() {
+    // Navegación móvil
+    const navToggle = document.querySelector('.nav-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    
+    if (navToggle && navMenu) {
+        navToggle.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
         });
-
-        // Cargar stock mínimo
-        const stock = this.stock.find(s => s.product_id === product.id);
-        if (stock) {
-            document.getElementById('editProductMinStock').value = stock.min_stock;
-        }
-
-        document.getElementById('editProductModal').style.display = 'block';
     }
-
-    async createPurchaseOrder() {
-        const form = document.getElementById('purchaseForm');
-        const formData = new FormData(form);
-        const items = JSON.parse(formData.get('items') || '[]');
-
-        if (items.length === 0) {
-            this.showAlert('Debe agregar al menos un producto', 'error');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/purchases/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ items })
-            });
-
-            if (response.ok) {
-                this.showAlert('Orden de compra creada exitosamente', 'success');
-                form.reset();
-                document.getElementById('purchaseItems').innerHTML = '';
-                document.getElementById('purchaseItemsInput').value = '[]';
-                await this.loadPurchases();
-                this.renderPurchases();
-                this.updateDashboard();
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
+    
+    // Cerrar menú móvil al hacer click en un enlace
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            if (navMenu) {
+                navMenu.classList.remove('active');
             }
-        } catch (error) {
-            console.error('Error creando orden de compra:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
+        });
+    });
+    
+    // Búsqueda de productos
+    const productSearch = document.getElementById('productSearch');
+    if (productSearch) {
+        productSearch.addEventListener('input', filterProducts);
     }
-
-    async createOrder() {
-        const form = document.getElementById('orderForm');
-        const itemsInput = document.getElementById('orderItemsInput');
-        const items = JSON.parse(itemsInput.value || '[]');
-
-        if (items.length === 0) {
-            this.showAlert('Debe agregar al menos un producto', 'error');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/purchases/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ items })
-            });
-
-            if (response.ok) {
-                this.showAlert('Orden de compra creada exitosamente', 'success');
-                form.reset();
-                document.getElementById('orderItems').innerHTML = '';
-                document.getElementById('orderItemsInput').value = '[]';
-                
-                // Deshabilitar el botón de crear orden
-                this.updateCreateOrderButton();
-                
-                await this.loadPurchases();
-                this.renderOrders();
-                this.updateDashboard();
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error creando orden de compra:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
+    
+    // Filtro de categorías
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', filterProducts);
     }
+}
 
-    async completePurchaseOrder(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/purchases/${id}/complete`, {
-                method: 'PUT'
-            });
-
-            if (response.ok) {
-                this.showAlert('Orden de compra completada exitosamente', 'success');
-                await this.loadPurchases();
-                await this.loadStock();
-                
-                // Actualizar ambas vistas
-                this.renderOrders(); // Solo mostrará órdenes pendientes
-                this.renderPurchases(); // Mostrará todas las órdenes
-                this.updateDashboard();
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error completando orden de compra:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
+// Navegación entre tabs
+function showTab(tabName) {
+    // Ocultar todos los tabs
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(tab => tab.classList.remove('active'));
+    
+    // Remover clase active de todos los enlaces
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    // Mostrar tab seleccionado
+    const selectedTab = document.getElementById(tabName);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+        currentTab = tabName;
     }
-
-    async completeOrder(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders/${id}/complete`, {
-                method: 'PUT'
-            });
-
-            if (response.ok) {
-                this.showAlert('Orden completada exitosamente', 'success');
-                await this.loadOrders();
-                await this.loadStock();
-                this.renderOrders();
-                this.renderStock();
-                this.updateDashboard();
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error completando orden:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
+    
+    // Marcar enlace como activo
+    const activeLink = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
     }
+    
+    // Cargar datos del tab
+    loadTabData();
+}
 
-    async deleteOrder(id) {
-        if (!confirm('¿Está seguro de que desea eliminar esta orden?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                this.showAlert('Orden eliminada exitosamente', 'success');
-                await this.loadOrders();
-                this.renderOrders();
-                this.updateDashboard();
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error eliminando orden:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
+// Cargar datos según el tab activo
+function loadTabData() {
+    switch (currentTab) {
+        case 'dashboard':
+            updateDashboard();
+            break;
+        case 'categories':
+            loadCategories();
+            break;
+        case 'products':
+            loadProducts();
+            loadCategoriesForProducts();
+            break;
+        case 'stock':
+            loadStock();
+            loadProductsForStock();
+            break;
+        case 'orders':
+            loadPurchaseOrders();
+            loadProductsForOrders();
+            break;
+        case 'purchases':
+            loadCompletedPurchases();
+            break;
     }
+}
 
-    async deletePurchaseOrder(id) {
-        if (!confirm('¿Está seguro de que desea eliminar esta orden de compra?')) {
-            return;
-        }
+// Dashboard
+function updateDashboard() {
+    Promise.all([
+        fetch('/api/products/').then(res => res.json()),
+        fetch('/api/stock/').then(res => res.json()),
+        fetch('/api/orders/').then(res => res.json()),
+        fetch('/api/purchases/').then(res => res.json())
+    ]).then(([products, stock, orders, purchases]) => {
+        document.getElementById('totalProducts').textContent = products.products?.length || 0;
+        document.getElementById('lowStockCount').textContent = stock.low_stock_count || 0;
+        document.getElementById('pendingOrders').textContent = orders.pending_count || 0;
+        document.getElementById('pendingPurchases').textContent = purchases.pending_count || 0;
+    }).catch(error => {
+        console.error('Error cargando dashboard:', error);
+        showToast('error', 'Error', 'No se pudo cargar el dashboard');
+    });
+}
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/purchases/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                this.showAlert('Orden de compra eliminada exitosamente', 'success');
-                await this.loadPurchases();
-                
-                // Actualizar ambas vistas
-                this.renderOrders(); // Solo mostrará órdenes pendientes
-                this.renderPurchases(); // Mostrará todas las órdenes
-                this.updateDashboard();
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error eliminando orden de compra:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    async updateStock(productId, quantity, minStock) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/stock/${productId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ quantity, min_stock: minStock })
-            });
-
-            if (response.ok) {
-                this.showAlert('Stock actualizado exitosamente', 'success');
-                await this.loadStock();
-                this.renderStock();
-                this.updateDashboard();
-            } else {
-                const error = await response.json();
-                this.showAlert(`Error: ${error.message || 'Error desconocido'}`, 'error');
-            }
-        } catch (error) {
-            console.error('Error actualizando stock:', error);
-            this.showAlert('Error de conexión', 'error');
-        }
-    }
-
-    async updateStockFromModal() {
-        const productId = document.getElementById('editStockProductId').value;
-        const quantity = parseInt(document.getElementById('editStockQuantity').value);
-        const minStock = parseInt(document.getElementById('editStockMinStock').value);
-
-        await this.updateStock(productId, quantity, minStock);
-        this.closeAllModals();
-    }
-
-    editStock(productId) {
-        const stock = this.stock.find(s => s.product_id === productId);
-        const product = this.products.find(p => p.id === productId);
-        
-        if (!stock || !product) return;
-
-        document.getElementById('editStockProductId').value = productId;
-        document.getElementById('editStockQuantity').value = stock.quantity;
-        document.getElementById('editStockMinStock').value = stock.min_stock;
-        
-        document.getElementById('editStockModal').style.display = 'block';
-    }
-
-    renderCategories() {
-        const container = document.getElementById('categoriesTable');
-        if (!container) return;
-
-        const html = `
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Productos</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${this.categories.map(category => `
-                            <tr>
-                                <td>${category.id}</td>
-                                <td>${category.name}</td>
-                                <td>${this.products.filter(p => p.category_id === category.id).length}</td>
-                                <td>
-                                    <button class="btn btn-edit btn-sm" onclick="app.editCategory(${category.id})">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </button>
-                                    <button class="btn btn-delete btn-sm" onclick="app.deleteCategory(${category.id})">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-        container.innerHTML = html;
-    }
-
-    renderProducts() {
-        const container = document.getElementById('productsTable');
-        if (!container) return;
-
-        const html = `
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Precio</th>
-                            <th>Categoría</th>
-                            <th>Stock</th>
-                            <th>Stock Mínimo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${this.products.map(product => {
-                            const stock = this.stock.find(s => s.product_id === product.id);
-                            const category = this.categories.find(c => c.id === product.category_id);
-                            return `
-                                <tr>
-                                    <td>${product.id}</td>
-                                    <td>${product.name}</td>
-                                    <td>${product.description}</td>
-                                    <td>$${product.price.toFixed(2)}</td>
-                                    <td>${category ? category.name : 'N/A'}</td>
-                                    <td>${stock ? stock.quantity : 0}</td>
-                                    <td>${stock ? stock.min_stock : 0}</td>
-                                    <td>
-                                        <button class="btn btn-edit btn-sm" onclick="app.editProduct(${product.id})">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </button>
-                                        <button class="btn btn-delete btn-sm" onclick="app.deleteProduct(${product.id})">
-                                            <i class="fas fa-trash"></i> Eliminar
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-        container.innerHTML = html;
-    }
-
-    renderStock() {
-        const container = document.getElementById('stockTable');
-        if (!container) return;
-
-        const html = `
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Stock Actual</th>
-                            <th>Stock Mínimo</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${this.stock.map(stock => {
-                            const product = this.products.find(p => p.id === stock.product_id);
-                            const status = stock.quantity <= stock.min_stock ? 'danger' : 'success';
-                            const statusText = stock.quantity <= stock.min_stock ? 'Bajo Stock' : 'OK';
-                            
-                            return `
-                                <tr>
-                                    <td>${product ? product.name : 'N/A'}</td>
-                                    <td>${stock.quantity}</td>
-                                    <td>${stock.min_stock}</td>
-                                    <td><span class="status ${status}">${statusText}</span></td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm" onclick="app.editStock(${stock.product_id})">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-        container.innerHTML = html;
-    }
-
-    renderOrders() {
-        const container = document.getElementById('ordersTable');
-        if (!container) return;
-
-        // Filtrar solo órdenes pendientes
-        const pendingOrders = this.purchases.filter(purchase => purchase.status === 'pending');
-
-        if (pendingOrders.length === 0) {
-            container.innerHTML = `
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    No hay órdenes de compra pendientes. Todas las órdenes han sido completadas o eliminadas.
-                </div>
-            `;
-            return;
-        }
-
-        const html = `
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Productos</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${pendingOrders.map(purchase => {
-                            const itemsText = purchase.items ? purchase.items.map(item => 
-                                `${item.product_name} (${item.quantity})`
-                            ).join(', ') : 'N/A';
-                            
-                            return `
-                                <tr>
-                                    <td>${purchase.id}</td>
-                                    <td>${itemsText}</td>
-                                    <td><span class="status ${purchase.status}">${purchase.status}</span></td>
-                                    <td>${new Date(purchase.created_at).toLocaleDateString()}</td>
-                                    <td>
-                                        <button class="btn btn-success btn-sm" onclick="app.completePurchaseOrder(${purchase.id})">
-                                            <i class="fas fa-check"></i> Completar
-                                        </button>
-                                        <button class="btn btn-delete btn-sm" onclick="app.deletePurchaseOrder(${purchase.id})">
-                                            <i class="fas fa-trash"></i> Eliminar
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-        container.innerHTML = html;
-    }
-
-    renderPurchases() {
-        const container = document.getElementById('purchasesTable');
-        if (!container) return;
-
-        // Filtrar solo órdenes completadas
-        const completedOrders = this.purchases.filter(purchase => purchase.status === 'completed');
-
-        if (completedOrders.length === 0) {
-            container.innerHTML = `
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    No hay órdenes de compra completadas. Las órdenes aparecerán aquí una vez que sean completadas desde la sección de Órdenes.
-                </div>
-            `;
-            return;
-        }
-
-        const html = `
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Productos</th>
-                            <th>Estado</th>
-                            <th>Fecha de Completado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${completedOrders.map(purchase => {
-                            const itemsText = purchase.items ? purchase.items.map(item => 
-                                `${item.product_name} (${item.quantity})`
-                            ).join(', ') : 'N/A';
-                            
-                            return `
-                                <tr>
-                                    <td>${purchase.id}</td>
-                                    <td>${itemsText}</td>
-                                    <td><span class="status completed">Completada</span></td>
-                                    <td>${new Date(purchase.created_at).toLocaleDateString()}</td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-        container.innerHTML = html;
-    }
-
-    updateDashboard() {
-        const totalProducts = this.products.length;
-        const totalCategories = this.categories.length;
-        const lowStockProducts = this.stock.filter(s => s.quantity <= s.min_stock).length;
-        const pendingPurchases = this.purchases.filter(p => p.status === 'pending').length;
-
-        // Actualizar estadísticas del dashboard
-        const statsContainer = document.getElementById('dashboardStats');
-        if (statsContainer) {
-            statsContainer.innerHTML = `
-                <div class="row">
-                    <div class="col">
-                        <h3>${totalProducts}</h3>
-                        <p>Total Productos</p>
+// Categorías
+function loadCategories() {
+    fetch('/api/categories/')
+        .then(response => response.json())
+        .then(data => {
+            const categoriesList = document.getElementById('categoriesList');
+            if (data.categories && data.categories.length > 0) {
+                categoriesList.innerHTML = data.categories.map(category => `
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-title">${category.name}</div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="editCategory(${category.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteCategory(${category.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        ${category.description ? `<p class="text-muted">${category.description}</p>` : ''}
                     </div>
-                    <div class="col">
-                        <h3>${totalCategories}</h3>
-                        <p>Total Categorías</p>
-                    </div>
-                    <div class="col">
-                        <h3>${lowStockProducts}</h3>
-                        <p>Productos con Bajo Stock</p>
-                    </div>
-                    <div class="col">
-                        <h3>${pendingPurchases}</h3>
-                        <p>Órdenes de Compra Pendientes</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Actualizar gráfico de stock
-        this.updateStockChart();
-    }
-
-    updateStockChart() {
-        const chartContainer = document.getElementById('stockChart');
-        if (!chartContainer) return;
-
-        const lowStockProducts = this.products.filter(product => {
-            const stock = this.stock.find(s => s.product_id === product.id);
-            return stock && stock.quantity <= stock.min_stock;
-        });
-
-        if (lowStockProducts.length > 0) {
-            chartContainer.innerHTML = `
-                <h3>Productos con Bajo Stock</h3>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Stock Actual</th>
-                                <th>Stock Mínimo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${lowStockProducts.map(product => {
-                                const stock = this.stock.find(s => s.product_id === product.id);
-                                return `
-                                    <tr>
-                                        <td>${product.name}</td>
-                                        <td>${stock.quantity}</td>
-                                        <td>${stock.min_stock}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        } else {
-            chartContainer.innerHTML = `
-                <div class="alert alert-success">
-                    ¡Excelente! Todos los productos tienen stock suficiente.
-                </div>
-            `;
-        }
-    }
-
-    showAlert(message, type = 'info') {
-        const alertContainer = document.getElementById('alertContainer');
-        if (!alertContainer) return;
-
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type}`;
-        alert.textContent = message;
-
-        alertContainer.appendChild(alert);
-
-        // Auto-remover después de 5 segundos
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.parentNode.removeChild(alert);
+                `).join('');
+            } else {
+                categoriesList.innerHTML = '<p class="text-muted text-center">No hay categorías creadas</p>';
             }
-        }, 5000);
-    }
+        })
+        .catch(error => {
+            console.error('Error cargando categorías:', error);
+            showToast('error', 'Error', 'No se pudieron cargar las categorías');
+        });
+}
 
-    addOrderItem() {
-        const productSelect = document.getElementById('orderProduct');
-        const quantityInput = document.getElementById('orderQuantity');
-        const itemsContainer = document.getElementById('orderItems');
-        const itemsInput = document.getElementById('orderItemsInput');
-
-        const productId = productSelect.value;
-        const quantity = parseInt(quantityInput.value);
-
-        if (!productId || !quantity || quantity <= 0) {
-            this.showAlert('Por favor complete todos los campos correctamente', 'error');
-            return;
-        }
-
-        const product = this.products.find(p => p.id === parseInt(productId));
-        if (!product) return;
-
-        const item = { product_id: parseInt(productId), quantity };
-        const currentItems = JSON.parse(itemsInput.value || '[]');
-        currentItems.push(item);
-        itemsInput.value = JSON.stringify(currentItems);
-
-        const itemElement = document.createElement('div');
-        itemElement.className = 'order-item';
-        itemElement.innerHTML = `
-            <span>${product.name} - Cantidad: ${quantity}</span>
-            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); app.updateOrderItems();">
-                Eliminar
-            </button>
-        `;
-
-        itemsContainer.appendChild(itemElement);
-        productSelect.value = '';
-        quantityInput.value = '';
-        
-        // Remover la validación required de los campos
-        productSelect.removeAttribute('required');
-        quantityInput.removeAttribute('required');
-        
-        // Habilitar el botón de crear orden
-        this.updateCreateOrderButton();
-    }
-
-    updateOrderItems() {
-        const itemsContainer = document.getElementById('orderItems');
-        const itemsInput = document.getElementById('orderItemsInput');
-        const productSelect = document.getElementById('orderProduct');
-        const quantityInput = document.getElementById('orderQuantity');
-        const items = [];
-
-        itemsContainer.querySelectorAll('.order-item').forEach(item => {
-            const text = item.querySelector('span').textContent;
-            const match = text.match(/(.+) - Cantidad: (\d+)/);
-            if (match) {
-                const productName = match[1];
-                const quantity = parseInt(match[2]);
-                const product = this.products.find(p => p.name === productName);
-                if (product) {
-                    items.push({ product_id: product.id, quantity });
-                }
+// Productos
+function loadProducts() {
+    fetch('/api/products/')
+        .then(response => response.json())
+        .then(data => {
+            const productsList = document.getElementById('productsList');
+            if (data.products && data.products.length > 0) {
+                productsList.innerHTML = data.products.map(product => `
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-title">${product.name}</div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="editProduct(${product.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-muted">${product.description}</p>
+                        <div class="product-details">
+                            <span class="badge badge-primary">$${product.price}</span>
+                            <span class="badge badge-secondary">${product.category?.name || 'Sin categoría'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                productsList.innerHTML = '<p class="text-muted text-center">No hay productos creados</p>';
             }
+        })
+        .catch(error => {
+            console.error('Error cargando productos:', error);
+            showToast('error', 'Error', 'No se pudieron cargar los productos');
         });
+}
 
-        itemsInput.value = JSON.stringify(items);
-        
-        // Actualizar el estado del botón de crear orden
-        this.updateCreateOrderButton();
-        
-        // Si no hay items, restaurar la validación required
-        if (items.length === 0) {
-            productSelect.setAttribute('required', '');
-            quantityInput.setAttribute('required', '');
-        }
-    }
-
-    fillProductCategorySelect() {
-        const categorySelect = document.getElementById('productCategory');
-        if (!categorySelect) return;
-
-        categorySelect.innerHTML = '<option value="">Seleccionar categoría</option>';
-        this.categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            categorySelect.appendChild(option);
-        });
-    }
-
-    fillOrderProductSelect() {
-        const productSelect = document.getElementById('orderProduct');
-        if (!productSelect) return;
-
-        productSelect.innerHTML = '<option value="">Seleccionar producto</option>';
-        this.products.forEach(product => {
-            const option = document.createElement('option');
-            option.value = product.id;
-            option.textContent = `${product.name} - $${product.price.toFixed(2)}`;
-            productSelect.appendChild(option);
-        });
-    }
-
-    updateCreateOrderButton() {
-        const createOrderBtn = document.getElementById('createOrderBtn');
-        const itemsContainer = document.getElementById('orderItems');
-        
-        if (!createOrderBtn || !itemsContainer) return;
-        
-        // Contar cuántos items hay en la orden
-        const itemCount = itemsContainer.querySelectorAll('.order-item').length;
-        
-        if (itemCount > 0) {
-            createOrderBtn.disabled = false;
-            createOrderBtn.title = `Crear orden con ${itemCount} producto${itemCount > 1 ? 's' : ''}`;
-        } else {
-            createOrderBtn.disabled = true;
-            createOrderBtn.title = 'Agrega al menos un producto para crear la orden';
-        }
-    }
-
-    addPurchaseItem() {
-        const productSelect = document.getElementById('purchaseProduct');
-        const quantityInput = document.getElementById('purchaseQuantity');
-        const itemsContainer = document.getElementById('purchaseItems');
-        const itemsInput = document.getElementById('purchaseItemsInput');
-
-        const productId = productSelect.value;
-        const quantity = parseInt(quantityInput.value);
-
-        if (!productId || !quantity || quantity <= 0) {
-            this.showAlert('Por favor complete todos los campos correctamente', 'error');
-            return;
-        }
-
-        const product = this.products.find(p => p.id === parseInt(productId));
-        if (!product) return;
-
-        const item = { product_id: parseInt(productId), quantity };
-        const currentItems = JSON.parse(itemsInput.value || '[]');
-        currentItems.push(item);
-        itemsInput.value = JSON.stringify(currentItems);
-
-        const itemElement = document.createElement('div');
-        itemElement.className = 'order-item';
-        itemElement.innerHTML = `
-            <span>${product.name} - Cantidad: ${quantity}</span>
-            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); app.updatePurchaseItems();">
-                Eliminar
-            </button>
-        `;
-
-        itemsContainer.appendChild(itemElement);
-        productSelect.value = '';
-        quantityInput.value = '';
-    }
-
-    updatePurchaseItems() {
-        const itemsContainer = document.getElementById('purchaseItems');
-        const itemsInput = document.getElementById('purchaseItemsInput');
-        const items = [];
-
-        itemsContainer.querySelectorAll('.order-item').forEach(item => {
-            const text = item.querySelector('span').textContent;
-            const match = text.match(/(.+) - Cantidad: (\d+)/);
-            if (match) {
-                const productName = match[1];
-                const quantity = parseInt(match[2]);
-                const product = this.products.find(p => p.name === productName);
-                if (product) {
-                    items.push({ product_id: product.id, quantity });
-                }
+// Stock
+function loadStock() {
+    fetch('/api/stock/')
+        .then(response => response.json())
+        .then(data => {
+            const stockList = document.getElementById('stockList');
+            if (data.stock_items && data.stock_items.length > 0) {
+                stockList.innerHTML = data.stock_items.map(item => `
+                    <div class="list-item ${item.quantity <= item.min_stock ? 'low-stock' : ''}">
+                        <div class="list-item-header">
+                            <div class="list-item-title">${item.product?.name || 'Producto no encontrado'}</div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="editStock(${item.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="stock-details">
+                            <span class="badge badge-info">Stock: ${item.quantity}</span>
+                            <span class="badge badge-warning">Mínimo: ${item.min_stock}</span>
+                            ${item.quantity <= item.min_stock ? '<span class="badge badge-danger">Stock Bajo</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                stockList.innerHTML = '<p class="text-muted text-center">No hay registros de stock</p>';
             }
+        })
+        .catch(error => {
+            console.error('Error cargando stock:', error);
+            showToast('error', 'Error', 'No se pudo cargar el stock');
         });
+}
 
-        itemsInput.value = JSON.stringify(items);
+// Órdenes de compra
+function loadPurchaseOrders() {
+    fetch('/api/purchases/')
+        .then(response => response.json())
+        .then(data => {
+            const ordersList = document.getElementById('ordersList');
+            const pendingOrders = data.purchase_orders?.filter(po => po.status === 'pending') || [];
+            
+            if (pendingOrders.length > 0) {
+                ordersList.innerHTML = pendingOrders.map(order => `
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-title">${order.supplier_name}</div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-success btn-sm" onclick="completePurchaseOrder(${order.id})">
+                                    <i class="fas fa-check"></i> Completar
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deletePurchaseOrder(${order.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-muted">Total: $${order.total}</p>
+                        <div class="order-items">
+                            ${order.items?.map(item => `
+                                <span class="badge badge-secondary">
+                                    ${item.product?.name || 'Producto no encontrado'} x${item.quantity}
+                                </span>
+                            `).join('') || ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                ordersList.innerHTML = '<p class="text-muted text-center">No hay órdenes pendientes</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando órdenes:', error);
+            showToast('error', 'Error', 'No se pudieron cargar las órdenes');
+        });
+}
+
+// Compras completadas
+function loadCompletedPurchases() {
+    fetch('/api/purchases/')
+        .then(response => response.json())
+        .then(data => {
+            const purchasesList = document.getElementById('purchasesList');
+            const completedPurchases = data.purchase_orders?.filter(po => po.status === 'completed') || [];
+            
+            if (completedPurchases.length > 0) {
+                purchasesList.innerHTML = completedPurchases.map(purchase => `
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-title">${purchase.supplier_name}</div>
+                            <span class="badge badge-success">Completada</span>
+                        </div>
+                        <p class="text-muted">Total: $${purchase.total}</p>
+                        <p class="text-muted">Completada: ${new Date(purchase.updated_at).toLocaleDateString()}</p>
+                        <div class="purchase-items">
+                            ${purchase.items?.map(item => `
+                                <span class="badge badge-secondary">
+                                    ${item.product?.name || 'Producto no encontrado'} x${item.quantity}
+                                </span>
+                            `).join('') || ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                purchasesList.innerHTML = '<p class="text-muted text-center">No hay compras completadas</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando compras:', error);
+            showToast('error', 'Error', 'No se pudieron cargar las compras');
+        });
+}
+
+// Cargar datos para formularios
+function loadCategoriesForProducts() {
+    fetch('/api/categories/')
+        .then(response => response.json())
+        .then(data => {
+            const categorySelect = document.getElementById('productCategory');
+            if (categorySelect && data.categories) {
+                categorySelect.innerHTML = '<option value="">Seleccionar categoría</option>' +
+                    data.categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+            }
+        })
+        .catch(error => console.error('Error cargando categorías:', error));
+}
+
+function loadProductsForStock() {
+    fetch('/api/products/')
+        .then(response => response.json())
+        .then(data => {
+            const productSelect = document.getElementById('stockProduct');
+            if (productSelect && data.products) {
+                productSelect.innerHTML = '<option value="">Seleccionar producto</option>' +
+                    data.products.map(prod => `<option value="${prod.id}">${prod.name}</option>`).join('');
+            }
+        })
+        .catch(error => console.error('Error cargando productos:', error));
+}
+
+function loadProductsForOrders() {
+    fetch('/api/products/')
+        .then(response => response.json())
+        .then(data => {
+            const productSelect = document.getElementById('productSelect');
+            if (productSelect && data.products) {
+                productSelect.innerHTML = '<option value="">Seleccionar producto</option>' +
+                    data.products.map(prod => `<option value="${prod.id}">${prod.name}</option>`).join('');
+            }
+        })
+        .catch(error => console.error('Error cargando productos:', error));
+}
+
+// Funciones de formularios
+function submitCategory(event) {
+    event.preventDefault();
+    
+    if (!this.validateForm()) {
+        showToast('error', 'Error de Validación', 'Por favor corrige los errores en el formulario');
+        return;
     }
+    
+    const formData = new FormData(event.target);
+    const categoryData = {
+        name: formData.get('name'),
+        description: formData.get('description')
+    };
+    
+    fetch('/api/categories/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categoryData)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Error al crear categoría');
+    })
+    .then(data => {
+        showToast('success', 'Éxito', 'Categoría creada correctamente');
+        this.resetForm();
+        loadCategories();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error', 'No se pudo crear la categoría');
+    });
+}
 
-    fillPurchaseProductSelect() {
-        const productSelect = document.getElementById('purchaseProduct');
-        if (!productSelect) return;
+function submitProduct(event) {
+    event.preventDefault();
+    
+    if (!this.validateForm()) {
+        showToast('error', 'Error de Validación', 'Por favor corrige los errores en el formulario');
+        return;
+    }
+    
+    const formData = new FormData(event.target);
+    const productData = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        price: parseFloat(formData.get('price')),
+        category_id: parseInt(formData.get('category_id'))
+    };
+    
+    fetch('/api/products/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Error al crear producto');
+    })
+    .then(data => {
+        showToast('success', 'Éxito', 'Producto creado correctamente');
+        this.resetForm();
+        loadProducts();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error', 'No se pudo crear el producto');
+    });
+}
 
-        productSelect.innerHTML = '<option value="">Seleccionar producto</option>';
-        this.products.forEach(product => {
-            const option = document.createElement('option');
-            option.value = product.id;
-            option.textContent = `${product.name} - $${product.price.toFixed(2)}`;
-            productSelect.appendChild(option);
+function submitStock(event) {
+    event.preventDefault();
+    
+    if (!this.validateForm()) {
+        showToast('error', 'Error de Validación', 'Por favor corrige los errores en el formulario');
+        return;
+    }
+    
+    const formData = new FormData(event.target);
+    const stockData = {
+        product_id: parseInt(formData.get('product_id')),
+        quantity: parseInt(formData.get('quantity')),
+        min_stock: parseInt(formData.get('min_stock') || 0)
+    };
+    
+    fetch('/api/stock/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(stockData)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Error al crear stock');
+    })
+    .then(data => {
+        showToast('success', 'Éxito', 'Stock creado correctamente');
+        this.resetForm();
+        loadStock();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error', 'No se pudo crear el stock');
+    });
+}
+
+function submitPurchaseOrder(event) {
+    event.preventDefault();
+    
+    if (!this.validateForm()) {
+        showToast('error', 'Error de Validación', 'Por favor corrige los errores en el formulario');
+        return;
+    }
+    
+    if (purchaseItems.length === 0) {
+        showToast('error', 'Error', 'Debes agregar al menos un producto a la orden');
+        return;
+    }
+    
+    const formData = new FormData(event.target);
+    const orderData = {
+        supplier_name: formData.get('supplier_name'),
+        items: purchaseItems
+    };
+    
+    fetch('/api/purchases/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Error al crear orden de compra');
+    })
+    .then(data => {
+        showToast('success', 'Éxito', 'Orden de compra creada correctamente');
+        this.resetForm();
+        purchaseItems = [];
+        updatePurchaseItems();
+        loadPurchaseOrders();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error', 'No se pudo crear la orden de compra');
+    });
+}
+
+// Funciones de órdenes de compra
+function addPurchaseItem() {
+    const productSelect = document.getElementById('productSelect');
+    const quantityInput = document.getElementById('quantityInput');
+    const unitPriceInput = document.getElementById('unitPriceInput');
+    
+    if (!productSelect.value || !quantityInput.value || !unitPriceInput.value) {
+        showToast('error', 'Error', 'Completa todos los campos del producto');
+        return;
+    }
+    
+    const productId = parseInt(productSelect.value);
+    const quantity = parseInt(quantityInput.value);
+    const unitPrice = parseFloat(unitPriceInput.value);
+    
+    if (quantity <= 0 || unitPrice < 0) {
+        showToast('error', 'Error', 'Cantidad y precio deben ser positivos');
+        return;
+    }
+    
+    // Verificar que el producto no esté ya agregado
+    const existingItem = purchaseItems.find(item => item.product_id === productId);
+    if (existingItem) {
+        showToast('warning', 'Advertencia', 'Este producto ya está en la orden');
+        return;
+    }
+    
+    purchaseItems.push({
+        product_id: productId,
+        quantity: quantity,
+        unit_price: unitPrice
+    });
+    
+    // Limpiar campos
+    productSelect.value = '';
+    quantityInput.value = '';
+    unitPriceInput.value = '';
+    
+    updatePurchaseItems();
+    updateCreateOrderButton();
+}
+
+function updatePurchaseItems() {
+    const purchaseItemsDiv = document.getElementById('purchaseItems');
+    
+    if (purchaseItems.length === 0) {
+        purchaseItemsDiv.innerHTML = '<p class="text-muted text-center">No hay productos agregados</p>';
+        return;
+    }
+    
+    purchaseItemsDiv.innerHTML = purchaseItems.map((item, index) => `
+        <div class="purchase-item">
+            <div class="purchase-item-info">
+                <strong>Producto ID: ${item.product_id}</strong> - 
+                Cantidad: ${item.quantity} - 
+                Precio: $${item.unit_price}
+            </div>
+            <div class="purchase-item-actions">
+                <button class="btn btn-danger btn-sm" onclick="removePurchaseItem(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function removePurchaseItem(index) {
+    purchaseItems.splice(index, 1);
+    updatePurchaseItems();
+    updateCreateOrderButton();
+}
+
+function updateCreateOrderButton() {
+    const createOrderBtn = document.getElementById('createOrderBtn');
+    if (createOrderBtn) {
+        createOrderBtn.disabled = purchaseItems.length === 0;
+    }
+}
+
+// Funciones de acciones
+function completePurchaseOrder(orderId) {
+    if (confirm('¿Estás seguro de que quieres completar esta orden de compra?')) {
+        fetch(`/api/purchases/${orderId}/complete`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Error al completar orden');
+        })
+        .then(data => {
+            showToast('success', 'Éxito', 'Orden de compra completada correctamente');
+            loadPurchaseOrders();
+            loadCompletedPurchases();
+            updateDashboard();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Error', 'No se pudo completar la orden');
         });
     }
 }
 
-// Inicializar la aplicación cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new StockManagementApp();
-}); 
+function deletePurchaseOrder(orderId) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta orden de compra?')) {
+        fetch(`/api/purchases/${orderId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                showToast('success', 'Éxito', 'Orden de compra eliminada correctamente');
+                loadPurchaseOrders();
+                updateDashboard();
+            } else {
+                throw new Error('Error al eliminar orden');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Error', 'No se pudo eliminar la orden');
+        });
+    }
+}
+
+// Funciones de edición (placeholders)
+function editCategory(id) {
+    showToast('info', 'Función en desarrollo', 'La edición de categorías estará disponible próximamente');
+}
+
+function editProduct(id) {
+    showToast('info', 'Función en desarrollo', 'La edición de productos estará disponible próximamente');
+}
+
+function editStock(id) {
+    showToast('info', 'Función en desarrollo', 'La edición de stock estará disponible próximamente');
+}
+
+function deleteCategory(id) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
+        fetch(`/api/categories/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                showToast('success', 'Éxito', 'Categoría eliminada correctamente');
+                loadCategories();
+            } else {
+                throw new Error('Error al eliminar categoría');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Error', 'No se pudo eliminar la categoría');
+        });
+    }
+}
+
+function deleteProduct(id) {
+    if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+        fetch(`/api/products/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                showToast('success', 'Éxito', 'Producto eliminado correctamente');
+                loadProducts();
+            } else {
+                throw new Error('Error al eliminar producto');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Error', 'No se pudo eliminar el producto');
+        });
+    }
+}
+
+// Filtros y búsqueda
+function filterProducts() {
+    const searchTerm = document.getElementById('productSearch')?.value.toLowerCase() || '';
+    const categoryFilter = document.getElementById('categoryFilter')?.value || '';
+    
+    // Implementar lógica de filtrado
+    // Por ahora solo recargamos los productos
+    loadProducts();
+}
+
+// Navegación móvil
+function toggleNav() {
+    const navMenu = document.querySelector('.nav-menu');
+    if (navMenu) {
+        navMenu.classList.toggle('active');
+    }
+}
+
+// Función helper para mostrar toasts (fallback si Alpine.js no está disponible)
+function showToast(type, title, message, duration = 5000) {
+    // Intentar usar Alpine.js si está disponible
+    if (window.Alpine && window.Alpine.store && window.Alpine.store('toast')) {
+        window.Alpine.store('toast').showToast(type, title, message, duration);
+        return;
+    }
+    
+    // Fallback: alert simple
+    alert(`${title}: ${message}`);
+}
+
+// Exportar funciones para uso global
+window.showTab = showTab;
+window.addPurchaseItem = addPurchaseItem;
+window.removePurchaseItem = removePurchaseItem;
+window.completePurchaseOrder = completePurchaseOrder;
+window.deletePurchaseOrder = deletePurchaseOrder;
+window.editCategory = editCategory;
+window.editProduct = editProduct;
+window.editStock = editStock;
+window.deleteCategory = deleteCategory;
+window.deleteProduct = deleteProduct;
+window.toggleNav = toggleNav;
+window.showToast = showToast; 

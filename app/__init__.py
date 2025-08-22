@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
 from .database import db
 from .config import Config
 
@@ -17,6 +18,9 @@ def create_app():
     
     # Configurar Flask-Migrate
     migrate = Migrate(app, db)
+    
+    # Configurar JWT
+    jwt = JWTManager(app)
 
     # Importar modelos después de inicializar db
     from .models.category import Category
@@ -25,6 +29,7 @@ def create_app():
     from .models.order import Order
     from .models.order_item import OrderItem
     from .models.purchase_order import PurchaseOrder
+    from .models.user import User
 
     # Importar rutas después de importar modelos
     from .routes.frontend import frontend_bp
@@ -33,6 +38,10 @@ def create_app():
     from .routes.purchases import purchases_bp
     from .routes.categories import categories_bp
     from .routes.orders import orders_bp
+    from .routes.auth import auth_bp
+    
+    # Inicializar API con flask-smorest
+    from .api import init_api
 
     # Registrar blueprints
     app.register_blueprint(frontend_bp)
@@ -41,6 +50,10 @@ def create_app():
     app.register_blueprint(purchases_bp, url_prefix='/api/purchases')
     app.register_blueprint(categories_bp, url_prefix='/api/categories')
     app.register_blueprint(orders_bp, url_prefix='/api/orders')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    
+    # Inicializar API con flask-smorest
+    init_api(app)
 
     # with app.app_context():
     #     db.create_all()

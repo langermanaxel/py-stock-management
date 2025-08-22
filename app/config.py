@@ -24,3 +24,13 @@ class Config:
     # Configuración de logs
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
     LOG_FILE = os.environ.get('LOG_FILE', 'logs/app.log')
+    
+    # 🔐 Configuración JWT
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'clave-jwt-super-secreta-para-desarrollo'
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 3600))  # 1 hora
+    JWT_REFRESH_TOKEN_EXPIRES = int(os.environ.get('JWT_REFRESH_TOKEN_EXPIRES', 2592000))  # 30 días
+    
+    # 📚 Configuración de la API
+    API_TITLE = os.environ.get('API_TITLE', 'Sistema de Gestión de Inventario API')
+    API_VERSION = os.environ.get('API_VERSION', 'v1')
+    OPENAPI_VERSION = os.environ.get('OPENAPI_VERSION', '3.0.2')

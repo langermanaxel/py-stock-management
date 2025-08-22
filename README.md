@@ -13,6 +13,26 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 - **📈 Dashboard**: Vista general con métricas y estadísticas del negocio
 - **📱 Interfaz Responsiva**: Diseño moderno que se adapta a cualquier dispositivo
 
+### 🔐 Funcionalidades de Seguridad
+- **🔑 Autenticación JWT**: Sistema seguro de login con tokens
+- **👥 Gestión de Usuarios**: Crear, editar y gestionar cuentas de usuario
+- **🛡️ Sistema de Roles**: 4 niveles de acceso (Admin, Gerente, Usuario, Viewer)
+- **🔒 Control de Permisos**: Acceso granular por funcionalidad
+- **📝 Auditoría**: Logs completos de todas las acciones de usuario
+- **🔐 Hashing Seguro**: Contraseñas protegidas con bcrypt
+
+### 📚 Documentación de API
+- **🌐 OpenAPI 3.0**: Especificación completa de la API
+- **📖 Swagger UI**: Interfaz interactiva para probar endpoints
+- **🔍 Esquemas Validados**: Marshmallow schemas con validación automática
+- **📋 Documentación Automática**: Generada automáticamente desde el código
+
+### ✅ Sistema de Validaciones Centralizado
+- **🛡️ Validaciones de Stock**: No-negativo, disponibilidad, integridad
+- **📋 Validaciones de Órdenes**: Completitud, stock disponible, estructura
+- **🔄 Validaciones Transaccionales**: Commit/rollback automático
+- **🧪 Tests Completos**: Cobertura de todos los casos de uso
+
 ### 🔄 Flujo de Trabajo Optimizado
 
 1. **⚙️ Configuración Inicial**:
@@ -38,7 +58,9 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 - **🎭 UI/UX**: CSS personalizado con variables y sistema responsivo
 - **🎯 Iconos**: Font Awesome para interfaz moderna
 - **🔄 API**: RESTful con validación de datos y CORS configurado
+- **📚 OpenAPI**: Documentación automática con flask-smorest
 - **⚙️ Configuración**: Variables de entorno con python-dotenv
+- **🔐 Seguridad**: JWT, bcrypt, middleware de autenticación
 
 ### 📦 Dependencias con Versiones Específicas
 - **Flask==3.0.0**: Framework web principal
@@ -46,6 +68,8 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 - **Flask-CORS==4.0.0**: Manejo de CORS para API
 - **Flask-Migrate==4.0.5**: Sistema de migraciones de base de datos
 - **python-dotenv==1.0.0**: Carga de variables de entorno
+- **flask-smorest==0.42.0**: Documentación automática de API
+- **marshmallow==3.20.1**: Serialización y validación de datos
 
 ## 📋 Requisitos del Sistema
 
@@ -90,19 +114,30 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 ### 🗄️ Configuración de Base de Datos
 
 **Para SQLite (recomendado para desarrollo):**
-   ```bash
+```bash
 DATABASE_URL=sqlite:///instance/stock_management.db
-   ```
+```
 
 **Para PostgreSQL (producción):**
-   ```bash
+```bash
 DATABASE_URL=postgresql://usuario:password@localhost:5432/stock_management
-   ```
+```
 
 **Para MySQL:**
-   ```bash
+```bash
 DATABASE_URL=mysql://usuario:password@localhost:3306/stock_management
-   ```
+```
+
+### 🔐 Configuración de Seguridad
+
+**JWT (JSON Web Tokens):**
+```bash
+JWT_SECRET_KEY=clave-jwt-super-secreta-y-muy-larga-para-produccion
+JWT_ACCESS_TOKEN_EXPIRES=3600
+JWT_REFRESH_TOKEN_EXPIRES=2592000
+```
+
+**⚠️ IMPORTANTE:** Cambia la clave JWT_SECRET_KEY en producción por una clave segura y única.
 
 ## 🚀 Instalación Rápida
 
@@ -158,10 +193,82 @@ flask db history
 flask db downgrade
 ```
 
+### 5. 🔐 Configurar Sistema de Autenticación
+
+#### Crear Usuario Administrador
+```bash
+# Usar el nuevo sistema CLI unificado
+python manage.py user create-admin
+```
+
+**Credenciales por defecto:**
+- 🔐 **Admin**: `admin` / `Admin123!`
+- 👔 **Gerente**: `gerente` / `Gerente123!`
+- 👤 **Usuario**: `usuario` / `Usuario123!`
+- 👁️ **Viewer**: `viewer` / `Viewer123!`
+
+**⚠️ IMPORTANTE:** Cambia las contraseñas después del primer login.
+
+#### Configurar Flask-Migrate
+```bash
+# Inicializar el repositorio de migraciones
+flask db init
+
+# Crear la primera migración
+flask db migrate -m "Migración inicial"
+
+# Aplicar la migración
+flask db upgrade
+```
+
+#### 📝 Comandos de Migración Útiles
+```bash
+# Crear nueva migración después de cambios en modelos
+flask db migrate -m "Descripción del cambio"
+
+# Aplicar migraciones pendientes
+flask db upgrade
+
+# Ver historial de migraciones
+flask db history
+
+# Revertir a migración anterior
+flask db downgrade
+```
+
 #### 📊 Cargar datos de ejemplo (opcional)
 ```bash
 python load_sample_data.py
 ```
+
+### 6. 🔐 Sistema de Roles y Permisos
+
+#### 👑 Roles Disponibles
+- **🔐 Administrador**: Acceso completo al sistema
+  - Gestionar usuarios y roles
+  - Acceso total a stock, órdenes y compras
+  - Configuración del sistema
+  
+- **👔 Gerente**: Gestión operativa
+  - Gestionar stock y órdenes
+  - Crear y modificar productos
+  - Acceso a reportes completos
+  
+- **👤 Usuario**: Operaciones básicas
+  - Ver y crear órdenes
+  - Consultar stock
+  - Acceso limitado a funciones
+  
+- **👁️ Viewer**: Solo lectura
+  - Consultar información
+  - Sin permisos de modificación
+
+#### 🛡️ Seguridad Implementada
+- **JWT Tokens**: Autenticación segura con expiración
+- **Hashing de Contraseñas**: bcrypt para máxima seguridad
+- **Middleware de Autenticación**: Protección de todas las rutas
+- **Control de Acceso**: Verificación de permisos por operación
+- **Logs de Auditoría**: Registro de todas las acciones de usuario
 
 ### 5. 🚀 Ejecutar la aplicación
 ```bash
@@ -169,6 +276,19 @@ python run.py
 ```
 
 **🌐 La aplicación estará disponible en:** `http://localhost:5000`
+
+### 6. 📚 Acceder a la Documentación de la API
+
+Una vez ejecutando, accede a:
+
+- **🌐 Swagger UI**: `http://localhost:5000/swagger-ui`
+- **📄 OpenAPI JSON**: `http://localhost:5000/api-spec.json`
+- **📄 OpenAPI YAML**: `http://localhost:5000/api-spec.yaml`
+
+**🔐 Para probar endpoints protegidos:**
+1. Usa el botón "Authorize" en Swagger UI
+2. Ingresa tu token JWT: `Bearer <tu-token>`
+3. ¡Listo para probar todos los endpoints!
 
 ## 🏗️ Arquitectura del Proyecto
 
@@ -203,6 +323,22 @@ stock_management/
 ```
 
 ## 🌐 Documentación de la API
+
+### 📖 Acceso a la Documentación
+
+Una vez que la aplicación esté ejecutándose, puedes acceder a:
+
+- **🌐 Swagger UI**: `http://localhost:5000/swagger-ui`
+- **📄 OpenAPI JSON**: `http://localhost:5000/api-spec.json`
+- **📄 OpenAPI YAML**: `http://localhost:5000/api-spec.yaml`
+
+### 🔐 Autenticación
+
+La API utiliza JWT (JSON Web Tokens) para autenticación:
+
+1. **Login**: `POST /api/auth/login` con `username` y `password`
+2. **Usar Token**: Incluir `Authorization: Bearer <token>` en headers
+3. **Refresh**: `POST /api/auth/refresh` para renovar tokens
 
 ### 📂 Categorías
 ```http
@@ -295,6 +431,34 @@ La aplicación usa SQLite por defecto. Para usar PostgreSQL:
 - `test_crud.py` - 📝 Pruebas de operaciones CRUD
 - `test_frontend.py` - 🎨 Pruebas de interfaz
 - `verify_data.py` - ✅ Verificación de integridad de datos
+- `test_validations.py` - ✅ Pruebas de validaciones centralizadas
+
+### ✅ Sistema de Validaciones
+
+#### 🛡️ Validaciones de Stock
+- **Cantidad no-negativa**: Previene stock negativo
+- **Stock mínimo válido**: Niveles de alerta apropiados
+- **Disponibilidad**: Verifica stock antes de operaciones
+- **Integridad**: Previene duplicados y inconsistencias
+
+#### 📋 Validaciones de Órdenes
+- **Completitud**: Verifica que todos los campos requeridos estén presentes
+- **Stock disponible**: Confirma disponibilidad antes de crear/completar
+- **Estructura válida**: Valida formato de items y cantidades
+- **Estados permitidos**: Solo operaciones válidas por estado
+
+#### 🔄 Validaciones Transaccionales
+- **Commit automático**: Operaciones exitosas se confirman
+- **Rollback automático**: Errores revierten cambios
+- **Consistencia**: Base de datos siempre en estado válido
+- **Atomicidad**: Operaciones completas o nada
+
+#### 🐛 Casos de Uso Cubiertos
+- ✅ **"Crear orden con producto ya agregado"** - Funciona correctamente
+- ✅ **"Orden incompleta"** - Falla con mensaje claro
+- ✅ **"Stock insuficiente"** - Previene sobreventa
+- ✅ **"Cantidades inválidas"** - Valida números positivos
+- ✅ **"Productos inexistentes"** - Verifica existencia
 
 ### 🚀 Ejecutar Pruebas
 ```bash
@@ -306,6 +470,85 @@ python verify_data.py
 
 # Probar operaciones CRUD
 python test_crud.py
+
+# Probar documentación de la API
+python test_api_docs.py
+
+# Probar validaciones centralizadas
+python -m pytest tests/test_validations.py -v
+```
+
+## 🖥️ Sistema CLI Unificado
+
+### 🚀 Comandos Principales
+
+El proyecto incluye un sistema CLI unificado para todas las operaciones de gestión:
+
+```bash
+# Ver ayuda general
+python manage.py --help
+
+# Ver ayuda específica
+python manage.py seed --help
+python manage.py db --help
+python manage.py user --help
+```
+
+### 🌱 Seeding de Datos
+
+```bash
+# Cargar datos de demostración completos
+python manage.py seed --demo
+
+# Cargar productos personalizados
+python manage.py seed --custom
+
+# Cargar todos los datos
+python manage.py seed --all
+```
+
+### 🗄️ Gestión de Base de Datos
+
+```bash
+# Inicializar base de datos
+python manage.py db init
+
+# Crear migración (requiere Flask-Migrate)
+python manage.py db migrate
+
+# Aplicar migraciones
+python manage.py db upgrade
+```
+
+### 👥 Gestión de Usuarios
+
+```bash
+# Crear usuario administrador
+python manage.py user create-admin
+
+# Crear usuarios de muestra
+python manage.py user create-sample
+```
+
+### 📊 Utilidades
+
+```bash
+# Ver estado de la aplicación
+python manage.py status
+
+# Abrir shell interactivo
+python manage.py shell
+```
+
+### 🔄 Migración desde Scripts Antiguos
+
+Si tienes scripts antiguos (`init_sample_data.py`, `load_sample_data.py`, etc.), puedes migrar fácilmente:
+
+```bash
+# Ejecutar script de migración
+python migrate_to_cli.py
+
+# Esto creará backup y guía de migración
 ```
 
 ## 🤝 Contribución

@@ -3,304 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Stock</title>
+    <title>Sistema de Gestión de Inventario</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Alpine.js CDN -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body>
-    <!-- Botón de cambio de tema -->
-    <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
-        <i class="fas fa-moon" id="themeIcon"></i>
-    </button>
+    <!-- Sistema de Notificaciones Toast -->
+    <div id="toast-container" 
+         x-data="toastManager()" 
+         x-show="toasts.length > 0"
+         class="toast-container">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-show="toast.visible" 
+                 x-transition:enter="toast-enter"
+                 x-transition:enter-start="toast-enter-start"
+                 x-transition:enter-end="toast-enter-end"
+                 x-transition:leave="toast-leave"
+                 x-transition:leave-start="toast-leave-start"
+                 x-transition:leave-end="toast-leave-end"
+                 :class="`toast toast-${toast.type}`"
+                 @click="removeToast(toast.id)">
+                <div class="toast-icon">
+                    <i :class="getToastIcon(toast.type)"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title" x-text="toast.title"></div>
+                    <div class="toast-message" x-text="toast.message"></div>
+                </div>
+                <button class="toast-close" @click="removeToast(toast.id)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </template>
+    </div>
 
     <div class="container">
         <!-- Header -->
-        <div class="header">
-            <h1><i class="fas fa-boxes"></i> Sistema de Gestión de Stock</h1>
-            <p>Gestiona tu inventario de manera eficiente y profesional</p>
-        </div>
+        <header class="header">
+            <h1><i class="fas fa-boxes"></i> Sistema de Gestión de Inventario</h1>
+            <nav class="nav">
+                <button class="nav-toggle" onclick="toggleNav()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="#" onclick="showTab('dashboard')" class="nav-link active">Dashboard</a></li>
+                    <li><a href="#" onclick="showTab('categories')" class="nav-link">Categorías</a></li>
+                    <li><a href="#" onclick="showTab('products')" class="nav-link">Productos</a></li>
+                    <li><a href="#" onclick="showTab('stock')" class="nav-link">Stock</a></li>
+                    <li><a href="#" onclick="showTab('orders')" class="nav-link">Órdenes</a></li>
+                    <li><a href="#" onclick="showTab('purchases')" class="nav-link">Compras</a></li>
+                </ul>
+            </nav>
+        </header>
 
-        <!-- Navegación por pestañas -->
-        <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="dashboard">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </button>
-            <button class="nav-tab" data-tab="categories">
-                <i class="fas fa-tags"></i> Categorías
-            </button>
-            <button class="nav-tab" data-tab="products">
-                <i class="fas fa-box"></i> Productos
-            </button>
-            <button class="nav-tab" data-tab="stock">
-                <i class="fas fa-warehouse"></i> Stock
-            </button>
-            <button class="nav-tab" data-tab="orders">
-                <i class="fas fa-shopping-cart"></i> Órdenes
-            </button>
-            <button class="nav-tab" data-tab="purchases">
-                <i class="fas fa-truck"></i> Compras
-            </button>
-        </div>
-
-        <!-- Contenedor de alertas -->
-        <div id="alertContainer"></div>
-
-        <!-- Contenido del Dashboard -->
-        <div id="dashboardContent" class="tab-content active">
-            <h2><i class="fas fa-chart-line"></i> Dashboard</h2>
-            
-            <!-- Estadísticas -->
-            <div id="dashboardStats">
-                <div class="row">
-                    <div class="col">
-                        <h3>0</h3>
-                        <p>Total Productos</p>
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <h2><i class="fas fa-chart-line"></i> Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Total Productos</h3>
+                        <p id="totalProducts">0</p>
                     </div>
-                    <div class="col">
-                        <h3>0</h3>
-                        <p>Total Categorías</p>
+                    <div class="dashboard-card">
+                        <h3>Stock Bajo</h3>
+                        <p id="lowStockCount">0</p>
                     </div>
-                    <div class="col">
-                        <h3>0</h3>
-                        <p>Productos con Bajo Stock</p>
+                    <div class="dashboard-card">
+                        <h3>Órdenes Pendientes</h3>
+                        <p id="pendingOrders">0</p>
                     </div>
-                    <div class="col">
-                        <h3>0</h3>
-                        <p>Órdenes Pendientes</p>
-                    </div>
-                    <div class="col">
-                        <h3>0</h3>
-                        <p>Compras Pendientes</p>
+                    <div class="dashboard-card">
+                        <h3>Órdenes de Compra</h3>
+                        <p id="pendingPurchases">0</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Gráfico de stock -->
-            <div id="stockChart">
-                <div class="alert alert-info">
-                    Cargando información del stock...
-                </div>
-            </div>
-        </div>
-
-        <!-- Contenido de Categorías -->
-        <div id="categoriesContent" class="tab-content">
-            <h2><i class="fas fa-tags"></i> Gestión de Categorías</h2>
-            
-            <div class="row">
-                <div class="col">
-                    <h3>Crear Nueva Categoría</h3>
-                    <form id="categoryForm">
+            <!-- Categories Tab -->
+            <div id="categories" class="tab-content">
+                <h2><i class="fas fa-tags"></i> Categorías</h2>
+                <div class="form-section">
+                    <h3>Agregar Categoría</h3>
+                    <form id="categoryForm" x-data="formValidator()" @submit.prevent="submitCategory">
                         <div class="form-group">
-                            <label for="categoryName">Nombre de la Categoría</label>
-                            <input type="text" id="categoryName" name="name" class="form-control" required>
+                            <label for="categoryName">Nombre:</label>
+                            <input type="text" 
+                                   id="categoryName" 
+                                   name="name" 
+                                   required 
+                                   minlength="2" 
+                                   maxlength="50"
+                                   x-model="formData.name"
+                                   @blur="validateField('name')"
+                                   :class="{'error': errors.name, 'success': !errors.name && formData.name}">
+                            <div class="error-message" x-show="errors.name" x-text="errors.name"></div>
                         </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Crear Categoría
-                        </button>
+                        <div class="form-group">
+                            <label for="categoryDescription">Descripción:</label>
+                            <textarea id="categoryDescription" 
+                                      name="description" 
+                                      maxlength="200"
+                                      x-model="formData.description"
+                                      @blur="validateField('description')"
+                                      :class="{'error': errors.description, 'success': !errors.description && formData.description}"></textarea>
+                            <div class="error-message" x-show="errors.description" x-text="errors.description"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Agregar Categoría</button>
                     </form>
                 </div>
-                
-                <div class="col">
-                    <h3>Lista de Categorías</h3>
-                    <div id="categoriesTable">
-                        <div class="alert alert-info">
-                            Cargando categorías...
-                        </div>
-                    </div>
+                <div class="list-section">
+                    <h3>Categorías Existentes</h3>
+                    <div id="categoriesList"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- Contenido de Productos -->
-        <div id="productsContent" class="tab-content">
-            <h2><i class="fas fa-box"></i> Gestión de Productos</h2>
-            
-            <div class="row">
-                <div class="col">
-                    <h3>Crear Nuevo Producto</h3>
-                    <form id="productForm">
+            <!-- Products Tab -->
+            <div id="products" class="tab-content">
+                <h2><i class="fas fa-box"></i> Productos</h2>
+                <div class="form-section">
+                    <h3>Agregar Producto</h3>
+                    <form id="productForm" x-data="formValidator()" @submit.prevent="submitProduct">
                         <div class="form-group">
-                            <label for="productName">Nombre del Producto</label>
-                            <input type="text" id="productName" name="name" class="form-control" required>
+                            <label for="productName">Nombre:</label>
+                            <input type="text" 
+                                   id="productName" 
+                                   name="name" 
+                                   required 
+                                   minlength="2" 
+                                   maxlength="100"
+                                   x-model="formData.name"
+                                   @blur="validateField('name')"
+                                   :class="{'error': errors.name, 'success': !errors.name && formData.name}">
+                            <div class="error-message" x-show="errors.name" x-text="errors.name"></div>
                         </div>
                         <div class="form-group">
-                            <label for="productDescription">Descripción</label>
-                            <textarea id="productDescription" name="description" class="form-control" required></textarea>
+                            <label for="productDescription">Descripción:</label>
+                            <textarea id="productDescription" 
+                                      name="description" 
+                                      maxlength="500"
+                                      x-model="formData.description"
+                                      @blur="validateField('description')"
+                                      :class="{'error': errors.description, 'success': !errors.description && formData.description}"></textarea>
+                            <div class="error-message" x-show="errors.description" x-text="errors.description"></div>
                         </div>
-                        <div class="form-group">
-                            <label for="productPrice">Precio</label>
-                            <input type="number" id="productPrice" name="price" class="form-control" step="0.01" min="0" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="productPrice">Precio:</label>
+                                <input type="number" 
+                                       id="productPrice" 
+                                       name="price" 
+                                       required 
+                                       min="0" 
+                                       step="0.01"
+                                       x-model="formData.price"
+                                       @blur="validateField('price')"
+                                       :class="{'error': errors.price, 'success': !errors.price && formData.price}">
+                                <div class="error-message" x-show="errors.price" x-text="errors.price"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="productCategory">Categoría:</label>
+                                <select id="productCategory" 
+                                        name="category_id" 
+                                        required
+                                        x-model="formData.category_id"
+                                        @blur="validateField('category_id')"
+                                        :class="{'error': errors.category_id, 'success': !errors.category_id && formData.category_id}">
+                                    <option value="">Seleccionar categoría</option>
+                                </select>
+                                <div class="error-message" x-show="errors.category_id" x-text="errors.category_id"></div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="productCategory">Categoría</label>
-                            <select id="productCategory" name="category_id" class="form-control" required>
-                                <option value="">Seleccionar categoría</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="productMinStock">Stock Mínimo</label>
-                            <input type="number" id="productMinStock" name="min_stock" class="form-control" min="0" value="0">
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Crear Producto
-                        </button>
+                        <button type="submit" class="btn btn-primary">Agregar Producto</button>
                     </form>
                 </div>
-                
-                <div class="col">
-                    <h3>Lista de Productos</h3>
-                    <div id="productsTable">
-                        <div class="alert alert-info">
-                            Cargando productos...
-                        </div>
+                <div class="list-section">
+                    <h3>Productos Existentes</h3>
+                    <div class="search-filter">
+                        <input type="text" id="productSearch" placeholder="Buscar productos..." class="search-input">
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="">Todas las categorías</option>
+                        </select>
                     </div>
+                    <div id="productsList"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- Contenido de Stock -->
-        <div id="stockContent" class="tab-content">
-            <h2><i class="fas fa-warehouse"></i> Gestión de Stock</h2>
-            
-            <div id="stockTable">
-                <div class="alert alert-info">
-                    Cargando información del stock...
+            <!-- Stock Tab -->
+            <div id="stock" class="tab-content">
+                <h2><i class="fas fa-warehouse"></i> Stock</h2>
+                <div class="form-section">
+                    <h3>Agregar Stock</h3>
+                    <form id="stockForm" x-data="formValidator()" @submit.prevent="submitStock">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stockProduct">Producto:</label>
+                                <select id="stockProduct" 
+                                        name="product_id" 
+                                        required
+                                        x-model="formData.product_id"
+                                        @blur="validateField('product_id')"
+                                        :class="{'error': errors.product_id, 'success': !errors.product_id && formData.product_id}">
+                                    <option value="">Seleccionar producto</option>
+                                </select>
+                                <div class="error-message" x-show="errors.product_id" x-text="errors.product_id"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="stockQuantity">Cantidad:</label>
+                                <input type="number" 
+                                       id="stockQuantity" 
+                                       name="quantity" 
+                                       required 
+                                       min="0"
+                                       x-model="formData.quantity"
+                                       @blur="validateField('quantity')"
+                                       :class="{'error': errors.quantity, 'success': !errors.quantity && formData.quantity}">
+                                <div class="error-message" x-show="errors.quantity" x-text="errors.quantity"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="stockMin">Stock Mínimo:</label>
+                                <input type="number" 
+                                       id="stockMin" 
+                                       name="min_stock" 
+                                       min="0"
+                                       x-model="formData.min_stock"
+                                       @blur="validateField('min_stock')"
+                                       :class="{'error': errors.min_stock, 'success': !errors.min_stock && formData.min_stock}">
+                                <div class="error-message" x-show="errors.min_stock" x-text="errors.min_stock"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Agregar Stock</button>
+                    </form>
+                </div>
+                <div class="list-section">
+                    <h3>Stock Actual</h3>
+                    <div id="stockList"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- Contenido de Órdenes -->
-        <div id="ordersContent" class="tab-content">
-            <h2><i class="fas fa-shopping-cart"></i> Gestión de Órdenes de Compra</h2>
-            
-            <div class="row">
-                <div class="col">
-                    <h3>Crear Nueva Orden de Compra</h3>
-                    <form id="orderForm">
+            <!-- Orders Tab -->
+            <div id="orders" class="tab-content">
+                <h2><i class="fas fa-shopping-cart"></i> Órdenes</h2>
+                <div class="form-section">
+                    <h3>Crear Orden de Compra</h3>
+                    <form id="purchaseOrderForm" x-data="formValidator()" @submit.prevent="submitPurchaseOrder">
                         <div class="form-group">
-                            <label for="orderProduct">Producto</label>
-                            <select id="orderProduct" class="form-control" required>
-                                <option value="">Seleccionar producto</option>
-                            </select>
+                            <label for="supplierName">Nombre del Proveedor:</label>
+                            <input type="text" 
+                                   id="supplierName" 
+                                   name="supplier_name" 
+                                   required 
+                                   minlength="2" 
+                                   maxlength="200"
+                                   x-model="formData.supplier_name"
+                                   @blur="validateField('supplier_name')"
+                                   :class="{'error': errors.supplier_name, 'success': !errors.supplier_name && formData.supplier_name}">
+                            <div class="error-message" x-show="errors.supplier_name" x-text="errors.supplier_name"></div>
                         </div>
-                        <div class="form-group">
-                            <label for="orderQuantity">Cantidad</label>
-                            <input type="number" id="orderQuantity" class="form-control" min="1" required>
-                        </div>
-                        <button type="button" class="btn btn-warning" onclick="app.addOrderItem()">
-                            <i class="fas fa-plus"></i> Agregar Producto
-                        </button>
                         
                         <div class="form-group">
-                            <label>Productos en la Orden de Compra</label>
-                            <div id="orderItems"></div>
-                            <input type="hidden" id="orderItemsInput" name="items" value="[]">
+                            <label>Productos:</label>
+                            <div class="product-selection">
+                                <div class="form-row">
+                                    <select id="productSelect" class="form-control">
+                                        <option value="">Seleccionar producto</option>
+                                    </select>
+                                    <input type="number" id="quantityInput" placeholder="Cantidad" min="1" class="form-control">
+                                    <input type="number" id="unitPriceInput" placeholder="Precio unitario" min="0" step="0.01" class="form-control">
+                                    <button type="button" onclick="addPurchaseItem()" class="btn btn-secondary">Agregar</button>
+                                </div>
+                            </div>
+                            <div id="purchaseItems" class="purchase-items"></div>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary" id="createOrderBtn" disabled>
-                            <i class="fas fa-check"></i> Crear Orden de Compra
-                        </button>
+                        <button type="submit" id="createOrderBtn" class="btn btn-primary" disabled>Crear Orden de Compra</button>
                     </form>
                 </div>
-                
-                <div class="col">
-                    <h3>Lista de Órdenes de Compra</h3>
-                    <div id="ordersTable">
-                        <div class="alert alert-info">
-                            Cargando órdenes de compra...
-                        </div>
-                    </div>
+                <div class="list-section">
+                    <h3>Órdenes Pendientes</h3>
+                    <div id="ordersList"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- Contenido de Compras -->
-        <div id="purchasesContent" class="tab-content">
-            <h2><i class="fas fa-truck"></i> Historial de Compras Completadas</h2>
-            
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                <strong>Información:</strong> Esta sección muestra todas las órdenes de compra que han sido completadas. 
-                Para crear nuevas órdenes o gestionar órdenes pendientes, ve a la sección de <strong>Órdenes</strong>.
-            </div>
-            
-            <div id="purchasesTable">
-                <div class="alert alert-info">
-                    Cargando órdenes de compra...
+            <!-- Purchases Tab -->
+            <div id="purchases" class="tab-content">
+                <h2><i class="fas fa-truck"></i> Compras</h2>
+                <div class="list-section">
+                    <h3>Órdenes de Compra Completadas</h3>
+                    <div id="purchasesList"></div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal para editar categoría -->
-    <div id="editCategoryModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Editar Categoría</h3>
-            <form id="editCategoryForm">
-                <input type="hidden" id="editCategoryId">
-                <div class="form-group">
-                    <label for="editCategoryName">Nombre de la Categoría</label>
-                    <input type="text" id="editCategoryName" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para editar producto -->
-    <div id="editProductModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Editar Producto</h3>
-            <form id="editProductForm">
-                <input type="hidden" id="editProductId">
-                <div class="form-group">
-                    <label for="editProductName">Nombre del Producto</label>
-                    <input type="text" id="editProductName" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="editProductDescription">Descripción</label>
-                    <textarea id="editProductDescription" class="form-control" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="editProductPrice">Precio</label>
-                    <input type="number" id="editProductPrice" class="form-control" step="0.01" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="editProductCategory">Categoría</label>
-                    <select id="editProductCategory" class="form-control" required>
-                        <option value="">Seleccionar categoría</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editProductMinStock">Stock Mínimo</label>
-                    <input type="number" id="editProductMinStock" class="form-control" min="0" value="0">
-                </div>
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para editar stock -->
-    <div id="editStockModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Editar Stock</h3>
-            <form id="editStockForm">
-                <input type="hidden" id="editStockProductId">
-                <div class="form-group">
-                    <label for="editStockQuantity">Cantidad</label>
-                    <input type="number" id="editStockQuantity" class="form-control" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="editStockMinStock">Stock Mínimo</label>
-                    <input type="number" id="editStockMinStock" class="form-control" min="0" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            </form>
-        </div>
+        </main>
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
