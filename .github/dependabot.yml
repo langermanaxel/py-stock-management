@@ -1,0 +1,147 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "USERNAME"
+    assignees:
+      - "USERNAME"
+    labels:
+      - "dependencies"
+      - "python"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    ignore:
+      # Ignorar actualizaciones mayores que podrían romper compatibilidad
+      - dependency-name: "Flask"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "SQLAlchemy"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "marshmallow"
+        update-types: ["version-update:semver-major"]
+    versioning-strategy: "auto"
+    allow:
+      # Permitir actualizaciones de dependencias de desarrollo
+      - dependency-type: "development"
+      - dependency-type: "production"
+    # Agrupar actualizaciones relacionadas
+    groups:
+      flask-ecosystem:
+        patterns:
+          - "Flask*"
+        update-types:
+          - "minor"
+          - "patch"
+      sqlalchemy-ecosystem:
+        patterns:
+          - "SQLAlchemy*"
+          - "Flask-SQLAlchemy*"
+        update-types:
+          - "minor"
+          - "patch"
+      testing-tools:
+        patterns:
+          - "pytest*"
+          - "coverage*"
+        update-types:
+          - "minor"
+          - "patch"
+      linting-tools:
+        patterns:
+          - "black"
+          - "isort"
+          - "flake8*"
+          - "mypy"
+        update-types:
+          - "minor"
+          - "patch"
+      security-tools:
+        patterns:
+          - "bandit"
+          - "safety"
+          - "pip-audit"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "USERNAME"
+    assignees:
+      - "USERNAME"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Agrupar actualizaciones de GitHub Actions
+    groups:
+      actions-core:
+        patterns:
+          - "actions/checkout*"
+          - "actions/setup-python*"
+          - "actions/cache*"
+        update-types:
+          - "minor"
+          - "patch"
+      actions-testing:
+        patterns:
+          - "codecov/codecov-action*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker dependencies (si usas Docker)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "USERNAME"
+    assignees:
+      - "USERNAME"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Agrupar actualizaciones de Docker
+    groups:
+      python-base:
+        patterns:
+          - "python*"
+        update-types:
+          - "minor"
+          - "patch"

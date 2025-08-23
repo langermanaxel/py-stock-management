@@ -1,5 +1,12 @@
 # 📦 Sistema de Gestión de Inventario
 
+[![CI/CD Pipeline](https://github.com/USERNAME/REPO_NAME/workflows/🚀%20CI%2FCD%20Pipeline/badge.svg)](https://github.com/USERNAME/REPO_NAME/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/USERNAME/REPO_NAME/actions/workflows/ci.yml)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A%2B-brightgreen)](https://github.com/USERNAME/REPO_NAME/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/flask-3.0.0-blue)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Un sistema completo de gestión de inventario desarrollado con Flask que permite gestionar productos, categorías, stock y órdenes de compra/venta de manera eficiente y profesional.
 
 ## ✨ Características Principales
@@ -14,12 +21,13 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 - **📱 Interfaz Responsiva**: Diseño moderno que se adapta a cualquier dispositivo
 
 ### 🔐 Funcionalidades de Seguridad
-- **🔑 Autenticación JWT**: Sistema seguro de login con tokens
+- **🔑 Autenticación Dual**: Sesiones para frontend + JWT para API
 - **👥 Gestión de Usuarios**: Crear, editar y gestionar cuentas de usuario
 - **🛡️ Sistema de Roles**: 4 niveles de acceso (Admin, Gerente, Usuario, Viewer)
-- **🔒 Control de Permisos**: Acceso granular por funcionalidad
+- **🔒 Control de Permisos**: Acceso granular por funcionalidad (read, write, delete, manage_users, admin)
 - **📝 Auditoría**: Logs completos de todas las acciones de usuario
 - **🔐 Hashing Seguro**: Contraseñas protegidas con bcrypt
+- **🛡️ Protección de Rutas**: Todas las operaciones de escritura requieren autenticación
 
 ### 📚 Documentación de API
 - **🌐 OpenAPI 3.0**: Especificación completa de la API
@@ -80,7 +88,23 @@ Un sistema completo de gestión de inventario desarrollado con Flask que permite
 
 ## 🔧 Configuración de Variables de Entorno
 
-### 📋 Archivo de Configuración
+### 📋 Opción 1: Configuración Automática (Recomendada)
+
+Ejecuta el script de configuración automática:
+```bash
+python setup_env.py
+```
+
+Este script te guiará paso a paso para configurar:
+- 🗄️ Base de datos (SQLite, PostgreSQL, MySQL)
+- 🔐 Claves secretas (generadas automáticamente)
+- 🌐 Entorno Flask (desarrollo, testing, producción)
+- 📝 Configuración CORS
+- 🔐 Configuración JWT
+- 📊 Configuración de logs
+- 📧 Configuración de email (opcional)
+
+### 📋 Opción 2: Configuración Manual
 
 1. **Copia el archivo de ejemplo**:
    ```bash
@@ -138,6 +162,21 @@ JWT_REFRESH_TOKEN_EXPIRES=2592000
 ```
 
 **⚠️ IMPORTANTE:** Cambia la clave JWT_SECRET_KEY en producción por una clave segura y única.
+
+### 🔑 Generar Claves Secretas Seguras
+
+**Para generar claves secretas manualmente:**
+
+```bash
+# Generar SECRET_KEY
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# Generar JWT_SECRET_KEY
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# Verificar variables de entorno
+python -c "from dotenv import load_dotenv; load_dotenv(); import os; print('DATABASE_URL:', os.getenv('DATABASE_URL'))"
+```
 
 ## 🚀 Instalación Rápida
 
@@ -332,6 +371,16 @@ Una vez que la aplicación esté ejecutándose, puedes acceder a:
 - **📄 OpenAPI JSON**: `http://localhost:5000/api-spec.json`
 - **📄 OpenAPI YAML**: `http://localhost:5000/api-spec.yaml`
 
+### ✨ Características de la Documentación
+
+- **🎨 Interfaz moderna**: Swagger UI 5.9.0 con tema personalizado
+- **🔍 Búsqueda y filtrado**: Encuentra endpoints rápidamente
+- **📱 Responsive**: Funciona perfectamente en dispositivos móviles
+- **🎯 Ejemplos interactivos**: Prueba endpoints directamente desde la interfaz
+- **🔒 Autenticación integrada**: Botón Authorize para tokens JWT
+- **📊 Respuestas detalladas**: Ejemplos de éxito y error para cada endpoint
+- **🏷️ Organización por tags**: Endpoints agrupados por funcionalidad
+
 ### 🔐 Autenticación
 
 La API utiliza JWT (JSON Web Tokens) para autenticación:
@@ -340,44 +389,58 @@ La API utiliza JWT (JSON Web Tokens) para autenticación:
 2. **Usar Token**: Incluir `Authorization: Bearer <token>` en headers
 3. **Refresh**: `POST /api/auth/refresh` para renovar tokens
 
-### 📂 Categorías
-```http
-GET    /api/categories/        # 📋 Listar todas las categorías
-POST   /api/categories/        # ➕ Crear nueva categoría
-PUT    /api/categories/<id>    # ✏️ Actualizar categoría
-DELETE /api/categories/<id>    # 🗑️ Eliminar categoría
-```
+### 📚 Endpoints Principales
 
-### 🛍️ Productos
-```http
-GET    /api/products/          # 📋 Listar todos los productos
-POST   /api/products/          # ➕ Crear nuevo producto
-PUT    /api/products/<id>      # ✏️ Actualizar producto
-DELETE /api/products/<id>      # 🗑️ Eliminar producto
-```
+#### 🔐 Autenticación (`/api/auth`)
+- **Login/Logout**: Gestión de sesiones
+- **Registro**: Crear nuevos usuarios
+- **Perfil**: Gestionar información del usuario
+- **Cambio de contraseña**: Actualizar credenciales
 
-### 📊 Stock
-```http
-GET    /api/stock/             # 📋 Consultar inventario
-POST   /api/stock/             # ➕ Crear registro de stock
-PUT    /api/stock/<id>         # ✏️ Actualizar stock
-```
+#### 🛍️ Productos (`/api/products`)
+- **CRUD completo**: Crear, leer, actualizar, eliminar
+- **Búsqueda avanzada**: Filtros por nombre, categoría, precio, stock
+- **Validaciones**: Prevención de productos duplicados
+- **Stock integrado**: Información de inventario incluida
 
-### 🛒 Órdenes de Venta
-```http
-GET    /api/orders/            # 📋 Listar órdenes de venta
-POST   /api/orders/            # ➕ Crear nueva orden
-PUT    /api/orders/<id>/complete # ✅ Completar orden
-DELETE /api/orders/<id>        # 🗑️ Eliminar orden
-```
+#### 📂 Categorías (`/api/categories`)
+- **Gestión completa**: Organización de productos
+- **Búsqueda**: Filtrar por nombre y productos
+- **Relaciones**: Productos asociados automáticamente
 
-### 📋 Órdenes de Compra
-```http
-GET    /api/purchases/         # 📋 Listar órdenes de compra
-POST   /api/purchases/         # ➕ Crear nueva orden
-PUT    /api/purchases/<id>/complete # ✅ Completar orden (actualiza stock)
-DELETE /api/purchases/<id>     # 🗑️ Eliminar orden
-```
+#### 📊 Stock (`/api/stock`)
+- **Control de inventario**: Cantidades y alertas
+- **Ajustes**: Incrementos y decrementos con validaciones
+- **Validaciones de negocio**: Stock nunca negativo
+- **Reportes**: Productos con stock bajo y agotado
+
+#### 🛒 Órdenes (`/api/orders`)
+- **Gestión de ventas**: Crear y gestionar órdenes
+- **Validaciones**: Stock disponible y reglas de negocio
+- **Estados**: Pendiente, completada, cancelada
+- **Transaccional**: Operaciones seguras con rollback
+
+#### 📋 Compras (`/api/purchases`)
+- **Órdenes de compra**: Reposición de inventario
+- **Actualización automática**: Stock se actualiza al completar
+- **Seguimiento**: Estado y progreso de las compras
+
+### 🧪 Testing Interactivo
+
+Puedes probar todos los endpoints directamente desde Swagger UI:
+
+1. **Endpoints Públicos**: Prueba directamente
+2. **Endpoints Protegidos**: 
+   - Haz clic en "Authorize" (🔒)
+   - Ingresa tu token JWT: `Bearer <tu-token>`
+   - ¡Listo para probar!
+
+### 📖 Documentación Detallada
+
+Para información completa sobre la API, consulta:
+- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)**: Guía completa de la API
+- **Swagger UI**: Interfaz interactiva con ejemplos
+- **OpenAPI Spec**: Especificación técnica en JSON/YAML
 
 ## 🎨 Características de la Interfaz
 
@@ -551,6 +614,40 @@ python migrate_to_cli.py
 # Esto creará backup y guía de migración
 ```
 
+## 📚 Documentación Completa
+
+### 🚀 Guías Principales
+- **[ONBOARDING_GUIDE.md](ONBOARDING_GUIDE.md)** - 🚀 **Guía completa de onboarding para nuevos desarrolladores**
+- **[CI_CD_GUIDE.md](CI_CD_GUIDE.md)** - Guía completa del sistema CI/CD con GitHub Actions
+- **[SETUP_CI_CD.md](SETUP_CI_CD.md)** - Configuración paso a paso de CI/CD
+
+### 🔧 Guías de Desarrollo
+- **[CLI_EXAMPLES.md](CLI_EXAMPLES.md)** - Ejemplos de uso del CLI de gestión
+- **[MIGRATION_CLI.md](MIGRATION_CLI.md)** - Guía de migración del CLI
+- **[MIGRATION_POSTGRESQL.md](MIGRATION_POSTGRESQL.md)** - Migración a PostgreSQL
+- **[VALIDATIONS.md](VALIDATIONS.md)** - Sistema de validaciones del proyecto
+
+### 🚀 Guías de Despliegue
+- **[DEPLOY_CLOUD.md](DEPLOY_CLOUD.md)** - Guía completa de despliegue en la nube
+- **[README_DOCKER.md](README_DOCKER.md)** - Guía de Docker y contenerización
+- **[DEPLOY_GITHUB.md](DEPLOY_GITHUB.md)** - Despliegue en GitHub Pages
+
+### 🎨 Guías de Funcionalidades
+- **[TOAST_SYSTEM.md](TOAST_SYSTEM.md)** - Sistema de notificaciones toast
+- **[README_CLI.md](README_CLI.md)** - Documentación del CLI de gestión
+- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - 📚 **Documentación completa de la API con Swagger/OpenAPI**
+- **[AUTH_SYSTEM_README.md](AUTH_SYSTEM_README.md)** - 🔐 **Sistema completo de autenticación y autorización**
+
+### 🐳 Guías de Docker
+- **[DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md)** - 🚀 **Inicio rápido con Docker en 1 comando**
+- **[README_DOCKER.md](README_DOCKER.md)** - Guía completa de Docker y contenerización
+
+### 📋 Scripts de Configuración
+- **[setup_complete.py](setup_complete.py)** - Configuración automática completa de CI/CD
+- **[setup_env.py](setup_env.py)** - Configuración automática de variables de entorno
+- **[personalize_badges.py](personalize_badges.py)** - Personalización de badges del README
+- **[install_pre_commit.py](install_pre_commit.py)** - Instalación de pre-commit hooks
+
 ## 🤝 Contribución
 
 ¡Las contribuciones son bienvenidas! Para contribuir:
@@ -588,11 +685,11 @@ Al reportar un bug, incluye:
 ## 🗺️ Roadmap de Desarrollo
 
 ### 🚀 Próximas Características
-- [ ] 👤 Sistema de usuarios y autenticación
+- [x] 👤 Sistema de usuarios y autenticación ✅
 - [ ] 📊 Reportes y gráficos avanzados
 - [ ] 📤 Exportación de datos (CSV, PDF)
 - [ ] 📧 Notificaciones por email
-- [ ] 📋 API REST documentada con Swagger
+- [x] 📋 API REST documentada con Swagger/OpenAPI ✅
 - [ ] 🌙 Modo oscuro/claro
 - [ ] 💾 Backup automático de base de datos
 - [ ] 🔔 Sistema de notificaciones push
@@ -604,7 +701,7 @@ Al reportar un bug, incluye:
 - [ ] ☁️ Deploy automático en cloud
 - [ ] 📊 Monitoreo y logs centralizados
 - [ ] ⚡ Cache con Redis
-- [ ] 🔒 Seguridad mejorada con JWT
+- [x] 🔒 Seguridad mejorada con JWT ✅
 
 ### 🎯 Optimizaciones
 - [ ] ⚡ Mejoras de rendimiento

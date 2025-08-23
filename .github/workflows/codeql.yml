@@ -1,0 +1,59 @@
+name: 🔒 CodeQL Security Analysis
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Ejecutar análisis de seguridad diariamente a las 2:00 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  analyze:
+    name: 🔒 CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python' ]
+
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+
+    - name: 🔍 Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        # Configuración específica para Python
+        config-file: ./.github/codeql/codeql-config.yml
+
+    - name: 🔧 Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    - name: 🔍 Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
+
+    - name: 📊 Upload SARIF
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: ${{ github.workspace }}/../codeql_db/python/results.sarif
+
+    - name: 📋 Security Summary
+      run: |
+        echo "## 🔒 CodeQL Security Analysis Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Security analysis completed**" >> $GITHUB_STEP_SUMMARY
+        echo "🔍 **Language analyzed**: ${{ matrix.language }}" >> $GITHUB_STEP_SUMMARY
+        echo "📊 **Results uploaded to GitHub Security tab**" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Review any security alerts in the Security tab of your repository." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,72 @@
+name: "CodeQL Config"
+
+# Configuración específica para Python
+queries:
+  # Queries de seguridad recomendadas para Python
+  - uses: security-and-quality
+  # Queries adicionales específicas para Flask
+  - uses: security-and-quality/python
+  - uses: security-and-quality/python/flask
+  # Queries para detección de vulnerabilidades comunes
+  - uses: security-and-quality/python/security
+  - uses: security-and-quality/python/security/command-injection
+  - uses: security-and-quality/python/security/sql-injection
+  - uses: security-and-quality/python/security/path-traversal
+  - uses: security-and-quality/python/security/deserialization
+  - uses: security-and-quality/python/security/authentication
+  - uses: security-and-quality/python/security/authorization
+
+# Configuración de paths
+paths:
+  - "app/**"
+  - "tests/**"
+  - "*.py"
+
+paths-ignore:
+  - "**/migrations/**"
+  - "**/__pycache__/**"
+  - "**/.venv/**"
+  - "**/env/**"
+  - "**/venv/**"
+  - "**/build/**"
+  - "**/dist/**"
+  - "**/.git/**"
+  - "**/node_modules/**"
+
+# Configuración de queries personalizadas
+queries:
+  # Queries de seguridad estándar
+  - uses: security-and-quality
+  # Queries específicas para Python
+  - uses: security-and-quality/python
+  # Queries para Flask
+  - uses: security-and-quality/python/flask
+  # Queries para SQLAlchemy
+  - uses: security-and-quality/python/sqlalchemy
+  # Queries para JWT
+  - uses: security-and-quality/python/jwt
+  # Queries para bcrypt
+  - uses: security-and-quality/python/bcrypt
+
+# Configuración de alertas
+query-filters:
+  - include:
+      tags contain: security
+  - include:
+      tags contain: external
+  - exclude:
+      tags contain: false-positive
+  - exclude:
+      tags contain: experimental
+
+# Configuración de thresholds
+query-settings:
+  - name: security
+    queries: security-and-quality/python/security
+    threshold: 1
+  - name: quality
+    queries: security-and-quality/python
+    threshold: 5
+
+# Configuración de build
+build-mode: manual

@@ -42,7 +42,28 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1><i class="fas fa-boxes"></i> Sistema de Gestión de Inventario</h1>
+            <div class="header-left">
+                <h1><i class="fas fa-boxes"></i> Sistema de Gestión de Inventario</h1>
+            </div>
+            
+            <!-- Información del Usuario -->
+            <div class="user-info">
+                {% if current_user %}
+                    <div class="user-details">
+                        <span class="user-name">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                        <span class="user-role">{{ current_user.role|title }}</span>
+                    </div>
+                    <div class="user-actions">
+                        <a href="{{ url_for('frontend.profile') }}" class="user-btn" title="Mi Perfil">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                        <a href="{{ url_for('frontend.logout') }}" class="user-btn logout-btn" title="Cerrar Sesión">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
             <nav class="nav">
                 <button class="nav-toggle" onclick="toggleNav()">
                     <i class="fas fa-bars"></i>

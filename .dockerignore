@@ -1,285 +1,64 @@
-# .dockerignore para Sistema de Gestión de Inventario
-# Excluye archivos y directorios innecesarios del contexto de Docker
+# .dockerignore mínimo para Sistema de Gestión de Inventario
 
-# =============================================================================
-# CONTROL DE VERSIONES
-# =============================================================================
+# Git y control de versiones
 .git
 .gitignore
 .gitattributes
-.github
 
-# =============================================================================
-# ENTORNOS VIRTUALES
-# =============================================================================
+# Entornos virtuales
 env/
 venv/
 .venv/
-ENV/
-env.bak/
-venv.bak/
 
-# =============================================================================
-# CACHE Y ARCHIVOS TEMPORALES
-# =============================================================================
+# Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+*.so
 
-# =============================================================================
-# TESTING Y COBERTURA
-# =============================================================================
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# =============================================================================
-# LOGS Y ARCHIVOS DE DATOS
-# =============================================================================
-*.log
+# Logs
 logs/
+*.log
+
+# Base de datos
 instance/
 *.db
 *.sqlite
-*.sqlite3
 
-# =============================================================================
-# DOCUMENTACIÓN Y ARCHIVOS DE DESARROLLO
-# =============================================================================
-docs/
-*.md
-README.md
-LICENSE
-.env
-.env.local
-.env.development
-.env.test
-.env.production
-
-# =============================================================================
-# ARCHIVOS DE CONFIGURACIÓN DE DESARROLLO
-# =============================================================================
-.flake8
-.pylintrc
-pyproject.toml
-setup.cfg
-setup.py
-requirements-dev.txt
-requirements-test.txt
-
-# =============================================================================
-# ARCHIVOS DE SISTEMA
-# =============================================================================
+# Archivos temporales
+*.tmp
+*.temp
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# =============================================================================
-# ARCHIVOS DE IDE Y EDITORES
-# =============================================================================
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.project
-.classpath
-.settings/
 
-# =============================================================================
-# ARCHIVOS DE DOCKER
-# =============================================================================
+# Documentación y scripts de desarrollo
+*.md
+.env
+.env.*
+docker-compose.*.yml
 Dockerfile*
-docker-compose*.yml
 .dockerignore
 
-# =============================================================================
-# ARCHIVOS DE DESPLIEGUE
-# =============================================================================
-Procfile
-start.sh
-start.bat
-DEPLOY_*.md
-
-# =============================================================================
-# ARCHIVOS DE SCRIPTS
-# =============================================================================
-*.sh
-*.bat
-*.ps1
-demo_*.py
+# Tests
+tests/
 test_*.py
-run_*.py
-init_*.py
-load_*.py
-add_*.py
-verify_*.py
+*_test.py
 
-# =============================================================================
-# ARCHIVOS DE DATOS DE EJEMPLO
-# =============================================================================
-sample_data/
-test_data/
-demo_data/
+# Scripts de configuración
+setup_*.py
+personalize_*.py
+install_*.py
+migrate_*.py
 
-# =============================================================================
-# ARCHIVOS DE BACKUP
-# =============================================================================
+# Backup
+backup_*/
 *.bak
 *.backup
-*.old
-*.tmp
-*.temp
-
-# =============================================================================
-# ARCHIVOS DE COMPRESIÓN
-# =============================================================================
-*.zip
-*.tar
-*.gz
-*.rar
-*.7z
-
-# =============================================================================
-# ARCHIVOS DE MEDIA
-# =============================================================================
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.svg
-*.ico
-*.mp4
-*.avi
-*.mov
-*.wmv
-
-# =============================================================================
-# ARCHIVOS DE AUDIO
-# =============================================================================
-*.mp3
-*.wav
-*.flac
-*.aac
-*.ogg
-
-# =============================================================================
-# ARCHIVOS DE OFICINA
-# =============================================================================
-*.doc
-*.docx
-*.xls
-*.xlsx
-*.ppt
-*.pptx
-*.pdf
-
-# =============================================================================
-# ARCHIVOS DE DESARROLLO FRONTEND
-# =============================================================================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json
-yarn.lock
-
-# =============================================================================
-# ARCHIVOS DE BUILD FRONTEND
-# =============================================================================
-static/dist/
-static/build/
-templates/build/
-
-# =============================================================================
-# ARCHIVOS DE CONFIGURACIÓN DE SERVIDOR
-# =============================================================================
-nginx/
-apache/
-.htaccess
-web.config
-
-# =============================================================================
-# ARCHIVOS DE MONITOREO
-# =============================================================================
-monitoring/
-grafana/
-prometheus/
-alertmanager/
-
-# =============================================================================
-# ARCHIVOS DE CI/CD
-# =============================================================================
-.travis.yml
-.circleci/
-.gitlab-ci.yml
-azure-pipelines.yml
-
-# =============================================================================
-# ARCHIVOS DE SECRETOS
-# =============================================================================
-secrets/
-.secrets
-*.key
-*.pem
-*.crt
-*.p12
-*.pfx
-
-# =============================================================================
-# ARCHIVOS DE BASE DE DATOS
-# =============================================================================
-*.dump
-*.sql
-migrations/
-alembic/
-
-# =============================================================================
-# ARCHIVOS DE LOGS DE DOCKER
-# =============================================================================
-docker-compose.override.yml
-docker-compose.*.yml
-docker-compose.*.yaml
-
-# =============================================================================
-# ARCHIVOS DE CONFIGURACIÓN DE ENTORNO
-# =============================================================================
-.env.*
-!.env.example
-config.local.py
-config.dev.py
-config.test.py
-config.prod.py

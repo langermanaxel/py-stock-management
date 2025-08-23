@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuario - Sistema de Gestión de Inventario</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2.5rem;
+        }
+        
+        .profile-name {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .profile-role {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .profile-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .profile-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .info-value {
+            color: #333;
+        }
+        
+        .role-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .permissions-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .permissions-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        
+        .permissions-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .permission-icon {
+            color: #38a169;
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .action-buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        
+        .flash-message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .flash-error {
+            background: #fee;
+            color: #c53030;
+            border: 1px solid #fed7d7;
+        }
+        
+        .flash-success {
+            background: #f0fff4;
+            color: #38a169;
+            border: 1px solid #c6f6d5;
+        }
+        
+        .flash-info {
+            background: #ebf8ff;
+            color: #3182ce;
+            border: 1px solid #bee3f8;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .profile-container {
+                margin: 20px auto;
+                padding: 15px;
+            }
+            
+            .profile-header {
+                padding: 20px;
+            }
+            
+            .profile-name {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {% if category == 'error' %}
+                                <i class="fas fa-exclamation-circle"></i>
+                            {% elif category == 'success' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle"></i>
+                            {% endif %}
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endwith %}
+        
+        <!-- Header del Perfil -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <h1 class="profile-name">{{ user.first_name }} {{ user.last_name }}</h1>
+            <p class="profile-role">{{ user.role|title }}</p>
+        </div>
+        
+        <!-- Contenido del Perfil -->
+        <div class="profile-content">
+            <!-- Información Personal -->
+            <div class="profile-section">
+                <h3><i class="fas fa-user-circle"></i> Información Personal</h3>
+                
+                <div class="info-item">
+                    <span class="info-label">Nombre de Usuario:</span>
+                    <span class="info-value">{{ user.username }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Nombre:</span>
+                    <span class="info-value">{{ user.first_name }} {{ user.last_name }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Rol:</span>
+                    <span class="role-badge">{{ user.role|title }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value">
+                        {% if user.is_active %}
+                            <i class="fas fa-check-circle" style="color: #38a169;"></i> Activo
+                        {% else %}
+                            <i class="fas fa-times-circle" style="color: #dc3545;"></i> Inactivo
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Último Login:</span>
+                    <span class="info-value">
+                        {% if user.last_login %}
+                            {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            Nunca
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Fecha de Creación:</span>
+                    <span class="info-value">{{ user.created_at.strftime('%d/%m/%Y') }}</span>
+                </div>
+            </div>
+            
+            <!-- Permisos y Acciones -->
+            <div class="profile-section">
+                <h3><i class="fas fa-shield-alt"></i> Permisos y Acciones</h3>
+                
+                <h4>Permisos Disponibles:</h4>
+                <ul class="permissions-list">
+                    {% for permission in user.get_permissions() %}
+                        <li>
+                            <i class="fas fa-check permission-icon"></i>
+                            {{ permission|replace('_', ' ')|title }}
+                        </li>
+                    {% endfor %}
+                </ul>
+                
+                <h4>Acciones Disponibles:</h4>
+                <ul class="permissions-list">
+                    {% if user.has_permission('read') %}
+                        <li><i class="fas fa-eye permission-icon"></i> Ver información</li>
+                    {% endif %}
+                    
+                    {% if user.has_permission('write') %}
+                        <li><i class="fas fa-edit permission-icon"></i> Crear y editar</li>
+                    {% endif %}
+                    
+                    {% if user.has_permission('delete') %}
+                        <li><i class="fas fa-trash permission-icon"></i> Eliminar registros</li>
+                    {% endif %}
+                    
+                    {% if user.has_permission('manage_users') %}
+                        <li><i class="fas fa-users permission-icon"></i> Gestionar usuarios</li>
+                    {% endif %}
+                    
+                    {% if user.has_permission('admin') %}
+                        <li><i class="fas fa-cog permission-icon"></i> Configuración del sistema</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Botones de Acción -->
+        <div class="action-buttons">
+            <a href="{{ url_for('frontend.change_password') }}" class="btn btn-primary">
+                <i class="fas fa-key"></i> Cambiar Contraseña
+            </a>
+            
+            <a href="{{ url_for('frontend.index') }}" class="btn btn-secondary">
+                <i class="fas fa-home"></i> Volver al Dashboard
+            </a>
+            
+            {% if user.is_admin() %}
+                <a href="{{ url_for('frontend.admin_panel') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Panel de Administración
+                </a>
+            {% endif %}
+            
+            <a href="{{ url_for('frontend.logout') }}" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        // Limpiar mensajes flash después de 5 segundos
+        setTimeout(function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(function(msg) {
+                msg.style.opacity = '0';
+                msg.style.transition = 'opacity 0.5s ease';
+                setTimeout(function() {
+                    msg.remove();
+                }, 500);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
