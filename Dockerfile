@@ -1,7 +1,7 @@
 # Dockerfile mínimo para Sistema de Gestión de Inventario
 # ¡Levanta en 1 comando con: docker-compose up!
 
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Instalar dependencias mínimas
 RUN apt-get update && apt-get install -y \
