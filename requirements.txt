@@ -21,7 +21,7 @@ apispec==6.3.0
 # 🧪 Dependencias de testing
 pytest==7.4.3
 pytest-cov==4.1.0
-pytest-mock==3.12.0
+pytest-mock==3.14.1
 click==8.1.7
 
 # 🎨 Herramientas de calidad de código
