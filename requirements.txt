@@ -5,7 +5,7 @@ Flask-CORS==4.0.0
 Flask-Migrate==4.0.5
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0
-requests==2.31.0
+requests==2.32.5
 
 # 🔐 Autenticación y Seguridad
 PyJWT==2.8.0
