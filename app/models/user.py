@@ -5,13 +5,11 @@ Incluye autenticación, roles y permisos
 """
 
 from datetime import datetime, timedelta
-from flask_sqlalchemy import SQLAlchemy
+from ..database import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import os
 from flask import current_app
-
-db = SQLAlchemy()
 
 class User(db.Model):
     """Modelo de Usuario con autenticación y roles"""

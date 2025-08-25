@@ -19,7 +19,7 @@ class PurchaseOrder(db.Model):
             'status': self.status,
             'created_at': self.created_at.isoformat(),
             'items': [item.to_dict() for item in self.items],
-            'created_by': self.created_by.username if self.created_by else None
+            'created_by_id': self.created_by_id
         }
 
 class PurchaseOrderItem(db.Model):

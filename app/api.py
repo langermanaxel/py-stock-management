@@ -179,7 +179,7 @@ Si tienes preguntas o necesitas ayuda:
     # Configuración de servidores
     app.config["OPENAPI_SPEC_SERVERS"] = [
         {
-            "url": "http://localhost:5000",
+            "url": "http://localhost:8080",
             "description": "Servidor de desarrollo local"
         },
         {

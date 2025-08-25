@@ -33,5 +33,5 @@ class Order(db.Model):
             'updated_at': self.updated_at.isoformat(),
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'items': [item.to_dict() for item in self.items],
-            'created_by': self.created_by.username if self.created_by else None
+            'created_by_id': self.created_by_id
         }
