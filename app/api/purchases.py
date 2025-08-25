@@ -182,3 +182,6 @@ class CompletePurchaseOrder(MethodView):
             abort(400, message=str(e))
         except SQLAlchemyError as e:
             abort(500, message=f"Error de base de datos: {str(e)}")
+
+# Exportar el blueprint con el nombre esperado
+purchases_bp = purchases_blp

@@ -7,7 +7,7 @@ on:
 jobs:
   dependabot:
     name: 🔄 Dependabot Validation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Solo se ejecuta en PRs de dependabot
     if: contains(github.event.pull_request.user.login, 'dependabot')
     
@@ -21,7 +21,7 @@ jobs:
         python-version: "3.11"
         
     - name: 📦 Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-dependabot-${{ hashFiles('**/requirements.txt') }}

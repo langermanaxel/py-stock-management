@@ -8,15 +8,18 @@ class PurchaseOrder(db.Model):
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
-    # Relación con los items de la orden
+    # Relaciones
     items = db.relationship('PurchaseOrderItem', back_populates='purchase_order', cascade='all, delete-orphan')
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    # created_by = db.relationship('User', back_populates='purchase_orders_created')
 
     def to_dict(self):
         return {
             'id': self.id,
             'status': self.status,
             'created_at': self.created_at.isoformat(),
-            'items': [item.to_dict() for item in self.items]
+            'items': [item.to_dict() for item in self.items],
+            'created_by': self.created_by.username if self.created_by else None
         }
 
 class PurchaseOrderItem(db.Model):

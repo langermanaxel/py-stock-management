@@ -378,3 +378,6 @@ class ProductStock(MethodView):
             return product
         except SQLAlchemyError as e:
             abort(500, message=f"Error de base de datos: {str(e)}")
+
+# Exportar el blueprint con el nombre esperado
+products_bp = products_blp

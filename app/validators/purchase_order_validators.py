@@ -5,8 +5,7 @@ Validadores para Órdenes de Compra con validaciones transaccionales
 
 from marshmallow import ValidationError
 from app.database import db
-from app.models.purchase_order import PurchaseOrder
-from app.models.purchase_order_item import PurchaseOrderItem
+from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem
 from app.models.stock import Stock
 from app.models.product import Product
 

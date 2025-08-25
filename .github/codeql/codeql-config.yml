@@ -4,17 +4,12 @@ name: "CodeQL Config"
 queries:
   # Queries de seguridad recomendadas para Python
   - uses: security-and-quality
-  # Queries adicionales específicas para Flask
+  # Queries específicas para Python
   - uses: security-and-quality/python
+  # Queries para Flask
   - uses: security-and-quality/python/flask
-  # Queries para detección de vulnerabilidades comunes
-  - uses: security-and-quality/python/security
-  - uses: security-and-quality/python/security/command-injection
-  - uses: security-and-quality/python/security/sql-injection
-  - uses: security-and-quality/python/security/path-traversal
-  - uses: security-and-quality/python/security/deserialization
-  - uses: security-and-quality/python/security/authentication
-  - uses: security-and-quality/python/security/authorization
+  # Queries para SQLAlchemy
+  - uses: security-and-quality/python/sqlalchemy
 
 # Configuración de paths
 paths:
@@ -33,20 +28,7 @@ paths-ignore:
   - "**/.git/**"
   - "**/node_modules/**"
 
-# Configuración de queries personalizadas
-queries:
-  # Queries de seguridad estándar
-  - uses: security-and-quality
-  # Queries específicas para Python
-  - uses: security-and-quality/python
-  # Queries para Flask
-  - uses: security-and-quality/python/flask
-  # Queries para SQLAlchemy
-  - uses: security-and-quality/python/sqlalchemy
-  # Queries para JWT
-  - uses: security-and-quality/python/jwt
-  # Queries para bcrypt
-  - uses: security-and-quality/python/bcrypt
+
 
 # Configuración de alertas
 query-filters:
@@ -69,4 +51,4 @@ query-settings:
     threshold: 5
 
 # Configuración de build
-build-mode: manual
+build-mode: none

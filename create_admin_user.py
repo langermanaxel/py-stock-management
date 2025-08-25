@@ -20,10 +20,14 @@ def create_admin_user():
     print("🔐 Creando usuario administrador inicial...")
     
     try:
-        # Crear aplicación
+        # Crear aplicación una sola vez
         app = create_app()
         
         with app.app_context():
+            # Crear todas las tablas si no existen
+            from app.database import db
+            db.create_all()
+            
             # Verificar si ya existe un administrador
             existing_admin = User.query.filter_by(role='admin').first()
             if existing_admin:
@@ -72,8 +76,7 @@ def create_sample_users():
     print("\n👥 Creando usuarios de ejemplo...")
     
     try:
-        app = create_app()
-        
+        # Usar la misma instancia de la aplicación
         with app.app_context():
             # Usuario Gerente
             manager_data = {

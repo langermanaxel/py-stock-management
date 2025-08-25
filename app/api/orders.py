@@ -65,6 +65,8 @@ class Orders(MethodView):
             db.session.flush()  # Para obtener el ID de la orden
             
             # Crear items de la orden
+            from app.models.order_item import OrderItem
+            from app.models.product import Product
             for item_data in order_data["items"]:
                 order_item = OrderItem(
                     order_id=order.id,
@@ -110,9 +112,11 @@ class OrderById(MethodView):
                 
                 # Actualizar items de la orden
                 # Primero eliminar items existentes
+                from app.models.order_item import OrderItem
                 OrderItem.query.filter_by(order_id=order_id).delete()
                 
                 # Crear nuevos items
+                from app.models.product import Product
                 for item_data in order_data["items"]:
                     order_item = OrderItem(
                         order_id=order_id,
@@ -193,3 +197,6 @@ class CompleteOrder(MethodView):
         except SQLAlchemyError as e:
             db.session.rollback()
             abort(500, message=f"Error de base de datos: {str(e)}")
+
+# Exportar el blueprint con el nombre esperado
+orders_bp = orders_blp

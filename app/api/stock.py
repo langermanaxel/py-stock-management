@@ -115,3 +115,6 @@ class StockById(MethodView):
         except SQLAlchemyError as e:
             db.session.rollback()
             abort(500, message=f"Error de base de datos: {str(e)}")
+
+# Exportar el blueprint con el nombre esperado
+stock_bp = stock_blp

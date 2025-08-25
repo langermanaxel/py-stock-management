@@ -167,3 +167,6 @@ class Logout(MethodView):
         """Logout de usuario"""
         # En JWT, el logout se maneja en el frontend invalidando el token
         return {"message": "Logout exitoso"}
+
+# Exportar el blueprint con el nombre esperado
+auth_bp = auth_blp

@@ -12,7 +12,7 @@ on:
 jobs:
   analyze:
     name: 🔒 CodeQL Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -28,25 +28,16 @@ jobs:
       uses: actions/checkout@v4
 
     - name: 🔍 Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         # Configuración específica para Python
         config-file: ./.github/codeql/codeql-config.yml
 
-    - name: 🔧 Autobuild
-      uses: github/codeql-action/autobuild@v2
-
     - name: 🔍 Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
-
-    - name: 📊 Upload SARIF
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
-      with:
-        sarif_file: ${{ github.workspace }}/../codeql_db/python/results.sarif
 
     - name: 📋 Security Summary
       run: |
