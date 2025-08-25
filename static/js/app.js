@@ -349,107 +349,120 @@ function updateDashboard() {
 }
 
 // Categorías
-function loadCategories() {
-    fetch('/api/categories/')
-        .then(response => response.json())
-        .then(data => {
-            const categoriesList = document.getElementById('categoriesList');
-            if (data.categories && data.categories.length > 0) {
-                categoriesList.innerHTML = data.categories.map(category => `
-                    <div class="list-item">
-                        <div class="list-item-header">
-                            <div class="list-item-title">${category.name}</div>
-                            <div class="list-item-actions">
-                                <button class="btn btn-secondary btn-sm" onclick="editCategory(${category.id})">
+async function loadCategories() {
+    try {
+        const response = await authManager.authenticatedRequest('/api/categories/');
+        if (!response) return;
+        
+        const data = await response.json();
+        const categoriesList = document.getElementById('categoriesList');
+        if (data.categories && data.categories.length > 0) {
+            categoriesList.innerHTML = data.categories.map(category => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <div class="list-item-title">${category.name}</div>
+                        <div class="list-item-actions">
+                            ${authManager.hasAnyRole(['admin', 'manager']) ? `
+                                <button class="btn btn-secondary btn-sm" onclick="editCategory(${category.id})" data-role="manager">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteCategory(${category.id})">
+                            ` : ''}
+                            ${authManager.hasRole('admin') ? `
+                                <button class="btn btn-danger btn-sm" onclick="deleteCategory(${category.id})" data-role="admin">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                            </div>
+                            ` : ''}
                         </div>
-                        ${category.description ? `<p class="text-muted">${category.description}</p>` : ''}
                     </div>
-                `).join('');
-            } else {
-                categoriesList.innerHTML = '<p class="text-muted text-center">No hay categorías creadas</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error cargando categorías:', error);
-            showToast('error', 'Error', 'No se pudieron cargar las categorías');
-        });
+                    ${category.description ? `<p class="text-muted">${category.description}</p>` : ''}
+                </div>
+            `).join('');
+        } else {
+            categoriesList.innerHTML = '<p class="text-muted text-center">No hay categorías creadas</p>';
+        }
+    } catch (error) {
+        console.error('Error cargando categorías:', error);
+        showToast('error', 'Error', 'No se pudieron cargar las categorías');
+    }
 }
 
 // Productos
-function loadProducts() {
-    fetch('/api/products/')
-        .then(response => response.json())
-        .then(data => {
-            const productsList = document.getElementById('productsList');
-            if (data.products && data.products.length > 0) {
-                productsList.innerHTML = data.products.map(product => `
-                    <div class="list-item">
-                        <div class="list-item-header">
-                            <div class="list-item-title">${product.name}</div>
-                            <div class="list-item-actions">
-                                <button class="btn btn-secondary btn-sm" onclick="editProduct(${product.id})">
+async function loadProducts() {
+    try {
+        const response = await authManager.authenticatedRequest('/api/products/');
+        if (!response) return;
+        
+        const data = await response.json();
+        const productsList = document.getElementById('productsList');
+        if (data.products && data.products.length > 0) {
+            productsList.innerHTML = data.products.map(product => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <div class="list-item-title">${product.name}</div>
+                        <div class="list-item-actions">
+                            ${authManager.hasAnyRole(['admin', 'manager']) ? `
+                                <button class="btn btn-secondary btn-sm" onclick="editProduct(${product.id})" data-role="manager">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})">
+                            ` : ''}
+                            ${authManager.hasRole('admin') ? `
+                                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})" data-role="admin">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                            </div>
-                        </div>
-                        <p class="text-muted">${product.description}</p>
-                        <div class="product-details">
-                            <span class="badge badge-primary">$${product.price}</span>
-                            <span class="badge badge-secondary">${product.category?.name || 'Sin categoría'}</span>
+                            ` : ''}
                         </div>
                     </div>
-                `).join('');
-            } else {
-                productsList.innerHTML = '<p class="text-muted text-center">No hay productos creados</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error cargando productos:', error);
-            showToast('error', 'Error', 'No se pudieron cargar los productos');
-        });
+                    <p class="text-muted">${product.description}</p>
+                    <div class="product-details">
+                        <span class="badge badge-primary">$${product.price}</span>
+                        <span class="badge badge-secondary">${product.category?.name || 'Sin categoría'}</span>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            productsList.innerHTML = '<p class="text-muted text-center">No hay productos creados</p>';
+        }
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+        showToast('error', 'Error', 'No se pudieron cargar los productos');
+    }
 }
 
 // Stock
-function loadStock() {
-    fetch('/api/stock/')
-        .then(response => response.json())
-        .then(data => {
-            const stockList = document.getElementById('stockList');
-            if (data.stock_items && data.stock_items.length > 0) {
-                stockList.innerHTML = data.stock_items.map(item => `
-                    <div class="list-item ${item.quantity <= item.min_stock ? 'low-stock' : ''}">
-                        <div class="list-item-header">
-                            <div class="list-item-title">${item.product?.name || 'Producto no encontrado'}</div>
-                            <div class="list-item-actions">
-                                <button class="btn btn-secondary btn-sm" onclick="editStock(${item.id})">
+async function loadStock() {
+    try {
+        const response = await authManager.authenticatedRequest('/api/stock/');
+        if (!response) return;
+        
+        const data = await response.json();
+        const stockList = document.getElementById('stockList');
+        if (data.stock_items && data.stock_items.length > 0) {
+            stockList.innerHTML = data.stock_items.map(item => `
+                <div class="list-item ${item.quantity <= item.min_stock ? 'low-stock' : ''}">
+                    <div class="list-item-header">
+                        <div class="list-item-title">${item.product?.name || 'Producto no encontrado'}</div>
+                        <div class="list-item-actions">
+                            ${authManager.hasAnyRole(['admin', 'manager']) ? `
+                                <button class="btn btn-secondary btn-sm" onclick="editStock(${item.id})" data-role="manager">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                            </div>
-                        </div>
-                        <div class="stock-details">
-                            <span class="badge badge-info">Stock: ${item.quantity}</span>
-                            <span class="badge badge-warning">Mínimo: ${item.min_stock}</span>
-                            ${item.quantity <= item.min_stock ? '<span class="badge badge-danger">Stock Bajo</span>' : ''}
+                            ` : ''}
                         </div>
                     </div>
-                `).join('');
-            } else {
-                stockList.innerHTML = '<p class="text-muted text-center">No hay registros de stock</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error cargando stock:', error);
-            showToast('error', 'Error', 'No se pudo cargar el stock');
-        });
+                    <div class="stock-details">
+                        <span class="badge badge-info">Stock: ${item.quantity}</span>
+                        <span class="badge badge-warning">Mínimo: ${item.min_stock}</span>
+                        ${item.quantity <= item.min_stock ? '<span class="badge badge-danger">Stock Bajo</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            stockList.innerHTML = '<p class="text-muted text-center">No hay registros de stock</p>';
+        }
+    } catch (error) {
+        console.error('Error cargando stock:', error);
+        showToast('error', 'Error', 'No se pudo cargar el stock');
+    }
 }
 
 // Órdenes de compra
@@ -863,54 +876,61 @@ function deletePurchaseOrder(orderId) {
 
 // Funciones de edición (placeholders)
 function editCategory(id) {
+    if (!checkPermission('edit_category', 'manager')) return;
     showToast('info', 'Función en desarrollo', 'La edición de categorías estará disponible próximamente');
 }
 
 function editProduct(id) {
+    if (!checkPermission('edit_product', 'manager')) return;
     showToast('info', 'Función en desarrollo', 'La edición de productos estará disponible próximamente');
 }
 
 function editStock(id) {
+    if (!checkPermission('edit_stock', 'manager')) return;
     showToast('info', 'Función en desarrollo', 'La edición de stock estará disponible próximamente');
 }
 
-function deleteCategory(id) {
+async function deleteCategory(id) {
+    if (!checkPermission('delete_category', 'admin')) return;
+    
     if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
-        fetch(`/api/categories/${id}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
-            if (response.ok) {
+        try {
+            const response = await authManager.authenticatedRequest(`/api/categories/${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (response && response.ok) {
                 showToast('success', 'Éxito', 'Categoría eliminada correctamente');
                 loadCategories();
             } else {
                 throw new Error('Error al eliminar categoría');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             showToast('error', 'Error', 'No se pudo eliminar la categoría');
-        });
+        }
     }
 }
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
+    if (!checkPermission('delete_product', 'admin')) return;
+    
     if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-        fetch(`/api/products/${id}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
-            if (response.ok) {
+        try {
+            const response = await authManager.authenticatedRequest(`/api/products/${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (response && response.ok) {
                 showToast('success', 'Éxito', 'Producto eliminado correctamente');
                 loadProducts();
             } else {
                 throw new Error('Error al eliminar producto');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             showToast('error', 'Error', 'No se pudo eliminar el producto');
-        });
+        }
     }
 }
 

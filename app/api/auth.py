@@ -43,8 +43,14 @@ class Login(MethodView):
             user.update_last_login()
             
             # Generar tokens
-            access_token = create_access_token(identity=user.id)
-            refresh_token = create_refresh_token(identity=user.id)
+            access_token = create_access_token(
+                identity=str(user.id),  # Convertir a string para PyJWT 2.x
+                additional_claims={"role": user.role, "username": user.username}
+            )
+            refresh_token = create_refresh_token(
+                identity=str(user.id),  # Convertir a string para PyJWT 2.x
+                additional_claims={"role": user.role, "username": user.username}
+            )
             
             return {
                 "message": "Login exitoso",
@@ -70,7 +76,10 @@ class Refresh(MethodView):
             if not user or not user.is_active:
                 abort(401, message="Usuario no válido")
             
-            new_access_token = create_access_token(identity=current_user_id)
+            new_access_token = create_access_token(
+                identity=str(current_user_id),  # Convertir a string para PyJWT 2.x
+                additional_claims={"role": user.role, "username": user.username}
+            )
             
             return {
                 "access_token": new_access_token

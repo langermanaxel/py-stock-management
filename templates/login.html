@@ -198,7 +198,7 @@
                 {% endif %}
             {% endwith %}
             
-            <form class="login-form" method="POST">
+            <form id="loginForm" class="login-form">
                 <div class="form-group">
                     <label for="username">
                         <i class="fas fa-user"></i> Usuario
@@ -243,26 +243,72 @@
         </div>
     </div>
     
+    <!-- Incluir configuración y sistema de autenticación JWT -->
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    
     <script>
         // Auto-focus en el primer campo
         document.getElementById('username').focus();
         
-        // Validación del formulario
-        document.querySelector('.login-form').addEventListener('submit', function(e) {
+        // Manejo del formulario de login con JWT
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             
             if (!username || !password) {
-                e.preventDefault();
-                alert('Por favor completa todos los campos');
+                showToast('error', 'Error', 'Por favor completa todos los campos');
                 return false;
             }
             
             // Mostrar indicador de carga
             const btn = document.querySelector('.login-btn');
+            const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
             btn.disabled = true;
+            
+            try {
+                // Intentar login con JWT
+                const result = await authManager.login(username, password);
+                
+                if (result.success) {
+                    showToast('success', 'Éxito', `¡Bienvenido, ${result.user.first_name}!`);
+                    
+                    // Redirigir al dashboard después de un breve delay
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    showToast('error', 'Error', result.error || 'Error en el login');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                showToast('error', 'Error', 'Error de conexión. Intenta nuevamente.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         });
+        
+        // Función simple para mostrar toasts (fallback)
+        function showToast(type, title, message) {
+            // Crear un toast simple si no hay sistema de toasts
+            const toast = document.createElement('div');
+            toast.className = `flash-message flash-${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <strong>${title}:</strong> ${message}
+            `;
+            
+            document.querySelector('.flash-messages').appendChild(toast);
+            
+            // Remover después de 5 segundos
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
         
         // Limpiar mensajes flash después de 5 segundos
         setTimeout(function() {

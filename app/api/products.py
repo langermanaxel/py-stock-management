@@ -13,6 +13,7 @@ from app.schemas.product import (
     ProductListSchema, ProductSearchSchema
 )
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.decorators import user_or_above_required, manager_or_admin_required, admin_required
 
 # Crear blueprint para productos
 products_blp = Blueprint(
@@ -55,6 +56,7 @@ class Products(MethodView):
         }
     )
     @jwt_required()
+    @user_or_above_required
     def get(self):
         """Listar todos los productos"""
         try:
@@ -99,6 +101,7 @@ class Products(MethodView):
         }
     )
     @jwt_required()
+    @manager_or_admin_required
     def post(self, product_data):
         """Crear nuevo producto"""
         try:
@@ -156,6 +159,7 @@ class ProductById(MethodView):
         }
     )
     @jwt_required()
+    @user_or_above_required
     def get(self, product_id):
         """Obtener producto por ID"""
         try:
@@ -205,6 +209,7 @@ class ProductById(MethodView):
         }
     )
     @jwt_required()
+    @manager_or_admin_required
     def put(self, product_data, product_id):
         """Actualizar producto"""
         try:
@@ -258,6 +263,7 @@ class ProductById(MethodView):
         }
     )
     @jwt_required()
+    @admin_required
     def delete(self, product_id):
         """Eliminar producto"""
         try:
@@ -308,6 +314,7 @@ class ProductSearch(MethodView):
         }
     )
     @jwt_required()
+    @user_or_above_required
     def get(self, search_params):
         """Buscar productos según criterios"""
         try:
@@ -368,6 +375,7 @@ class ProductStock(MethodView):
         }
     )
     @jwt_required()
+    @user_or_above_required
     def get(self, product_id):
         """Obtener producto con información de stock"""
         try:

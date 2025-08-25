@@ -10,6 +10,7 @@ from app.database import db
 from app.models.stock import Stock
 from app.schemas.stock import StockSchema, StockCreateSchema, StockUpdateSchema, StockListSchema
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.decorators import user_or_above_required, manager_or_admin_required, admin_required
 from app.validators.stock_validators import validate_stock_creation, validate_stock_update
 
 # Crear blueprint para stock
@@ -25,6 +26,7 @@ class StockItems(MethodView):
     
     @stock_blp.response(200, StockListSchema)
     @jwt_required()
+    @user_or_above_required
     def get(self):
         """Listar todo el stock"""
         try:
@@ -42,6 +44,7 @@ class StockItems(MethodView):
     @stock_blp.arguments(StockCreateSchema)
     @stock_blp.response(201, StockSchema)
     @jwt_required()
+    @manager_or_admin_required
     def post(self, stock_data):
         """Crear nuevo item de stock"""
         try:
@@ -69,6 +72,7 @@ class StockById(MethodView):
     
     @stock_blp.response(200, StockSchema)
     @jwt_required()
+    @user_or_above_required
     def get(self, stock_id):
         """Obtener stock por ID"""
         try:
@@ -80,6 +84,7 @@ class StockById(MethodView):
     @stock_blp.arguments(StockUpdateSchema)
     @stock_blp.response(200, StockSchema)
     @jwt_required()
+    @manager_or_admin_required
     def put(self, stock_data, stock_id):
         """Actualizar stock"""
         try:
@@ -103,6 +108,7 @@ class StockById(MethodView):
     
     @stock_blp.response(204)
     @jwt_required()
+    @admin_required
     def delete(self, stock_id):
         """Eliminar stock"""
         try:

@@ -47,21 +47,19 @@
             </div>
             
             <!-- Información del Usuario -->
-            <div class="user-info">
-                {% if current_user %}
-                    <div class="user-details">
-                        <span class="user-name">{{ current_user.first_name }} {{ current_user.last_name }}</span>
-                        <span class="user-role">{{ current_user.role|title }}</span>
-                    </div>
-                    <div class="user-actions">
-                        <a href="{{ url_for('frontend.profile') }}" class="user-btn" title="Mi Perfil">
-                            <i class="fas fa-user-circle"></i>
-                        </a>
-                        <a href="{{ url_for('frontend.logout') }}" class="user-btn logout-btn" title="Cerrar Sesión">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </a>
-                    </div>
-                {% endif %}
+            <div class="user-info" id="userInfo" style="display: none;">
+                <div class="user-details">
+                    <span class="user-name" id="userName"></span>
+                    <span class="user-role" id="userRole"></span>
+                </div>
+                <div class="user-actions">
+                    <a href="#" class="user-btn" title="Mi Perfil" onclick="showProfile()">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                    <a href="#" class="user-btn logout-btn" title="Cerrar Sesión" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
             </div>
             
             <nav class="nav">
@@ -70,11 +68,11 @@
                 </button>
                 <ul class="nav-menu">
                     <li><a href="#" onclick="showTab('dashboard')" class="nav-link active">Dashboard</a></li>
-                    <li><a href="#" onclick="showTab('categories')" class="nav-link">Categorías</a></li>
-                    <li><a href="#" onclick="showTab('products')" class="nav-link">Productos</a></li>
-                    <li><a href="#" onclick="showTab('stock')" class="nav-link">Stock</a></li>
-                    <li><a href="#" onclick="showTab('orders')" class="nav-link">Órdenes</a></li>
-                    <li><a href="#" onclick="showTab('purchases')" class="nav-link">Compras</a></li>
+                    <li><a href="#" onclick="showTab('categories')" class="nav-link" data-role="user">Categorías</a></li>
+                    <li><a href="#" onclick="showTab('products')" class="nav-link" data-role="user">Productos</a></li>
+                    <li><a href="#" onclick="showTab('stock')" class="nav-link" data-role="user">Stock</a></li>
+                    <li><a href="#" onclick="showTab('orders')" class="nav-link" data-role="user">Órdenes</a></li>
+                    <li><a href="#" onclick="showTab('purchases')" class="nav-link" data-role="user">Compras</a></li>
                 </ul>
             </nav>
         </header>
@@ -107,7 +105,7 @@
             <!-- Categories Tab -->
             <div id="categories" class="tab-content">
                 <h2><i class="fas fa-tags"></i> Categorías</h2>
-                <div class="form-section">
+                <div class="form-section" data-role="manager">
                     <h3>Agregar Categoría</h3>
                     <form id="categoryForm" x-data="formValidator()" @submit.prevent="submitCategory">
                         <div class="form-group">
@@ -145,7 +143,7 @@
             <!-- Products Tab -->
             <div id="products" class="tab-content">
                 <h2><i class="fas fa-box"></i> Productos</h2>
-                <div class="form-section">
+                <div class="form-section" data-role="manager">
                     <h3>Agregar Producto</h3>
                     <form id="productForm" x-data="formValidator()" @submit.prevent="submitProduct">
                         <div class="form-group">
@@ -216,7 +214,7 @@
             <!-- Stock Tab -->
             <div id="stock" class="tab-content">
                 <h2><i class="fas fa-warehouse"></i> Stock</h2>
-                <div class="form-section">
+                <div class="form-section" data-role="manager">
                     <h3>Agregar Stock</h3>
                     <form id="stockForm" x-data="formValidator()" @submit.prevent="submitStock">
                         <div class="form-row">
@@ -320,6 +318,54 @@
         </main>
     </div>
 
+    <!-- Incluir configuración y sistema de autenticación JWT -->
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    
+    <script>
+        // Inicializar el sistema de autenticación
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Verificar si el usuario está autenticado
+            if (!authManager.isAuthenticated()) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Inicializar el manager de autenticación
+            await authManager.initialize();
+            
+            // Mostrar información del usuario
+            updateUserInfo();
+            
+            // Actualizar UI según el rol del usuario
+            updateUIForUserRole();
+            
+            // Cargar datos iniciales
+            loadDashboard();
+        });
+        
+        // Función para mostrar información del usuario
+        function updateUserInfo() {
+            const user = authManager.getUser();
+            if (user) {
+                document.getElementById('userName').textContent = `${user.first_name} ${user.last_name}`;
+                document.getElementById('userRole').textContent = user.role;
+                document.getElementById('userInfo').style.display = 'flex';
+            }
+        }
+        
+        // Función para mostrar perfil
+        function showProfile() {
+            showToast('info', 'Perfil', 'Función de perfil en desarrollo');
+        }
+        
+        // Función para logout
+        function logout() {
+            authManager.logout();
+        }
+        
+
+    </script>
 </body>
 </html> 

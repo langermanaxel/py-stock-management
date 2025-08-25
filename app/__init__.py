@@ -27,6 +27,44 @@ def create_app():
     app.config['JWT_TOKEN_LOCATION'] = ['headers']
     app.config['JWT_HEADER_NAME'] = 'Authorization'
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
+    
+    # Loaders de JWT para manejar identidad y carga de usuario
+    @jwt.user_identity_loader
+    def user_identity_lookup(user_or_id):
+        """Convierte la identidad del usuario a string para PyJWT 2.x"""
+        return str(user_or_id)
+    
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        """Carga automáticamente el usuario desde el token JWT"""
+        from app.models.user import User
+        identity = jwt_data["sub"]  # viene como string
+        return User.query.get(int(identity))
+    
+    # Error handlers de JWT para respuestas consistentes con flask-smorest
+    @jwt.unauthorized_loader
+    def missing_token(reason):
+        """Maneja tokens JWT faltantes"""
+        from flask import jsonify
+        return jsonify(message="JWT requerido", detail=reason), 401
+    
+    @jwt.invalid_token_loader
+    def invalid_token(reason):
+        """Maneja tokens JWT inválidos"""
+        from flask import jsonify
+        return jsonify(message="Token inválido", detail=reason), 401
+    
+    @jwt.expired_token_loader
+    def expired_token(jwt_header, jwt_payload):
+        """Maneja tokens JWT expirados"""
+        from flask import jsonify
+        return jsonify(message="Token expirado"), 401
+    
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        """Maneja tokens JWT revocados"""
+        from flask import jsonify
+        return jsonify(message="Token revocado"), 401
 
     # Crear contexto de aplicación para importar modelos
     with app.app_context():

@@ -25,12 +25,7 @@ class CategorySchema(Schema):
         dump_only=True
     )
     
-    # Campos relacionados
-    products = fields.Nested(
-        'ProductSchema', 
-        many=True, 
-        dump_only=True
-    )
+    # Campos relacionados (evitar referencias circulares)
     product_count = fields.Int(
         dump_only=True
     )

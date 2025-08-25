@@ -25,75 +25,28 @@ def login_required(f):
     return decorated_function
 
 @frontend_bp.route('/')
-@login_required
 def index():
-    """Página principal - requiere autenticación"""
-    user = User.query.get(session['user_id'])
-    return render_template('index.html', user=user)
+    """Página principal - la autenticación se maneja en el frontend con JWT"""
+    return render_template('index.html')
 
-@frontend_bp.route('/login', methods=['GET', 'POST'])
+@frontend_bp.route('/login', methods=['GET'])
 def login():
-    """Página de login"""
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        if not username or not password:
-            flash('Usuario y contraseña son requeridos', 'error')
-            return render_template('login.html')
-        
-        user = User.get_by_username(username)
-        if user and user.check_password(password) and user.is_active:
-            session['user_id'] = user.id
-            session['username'] = user.username
-            session['role'] = user.role
-            session['permissions'] = user.get_permissions()
-            
-            flash(f'¡Bienvenido, {user.first_name}!', 'success')
-            return redirect(url_for('frontend.index'))
-        else:
-            flash('Usuario o contraseña incorrectos', 'error')
-    
+    """Página de login - la autenticación se maneja en el frontend con JWT"""
     return render_template('login.html')
 
 @frontend_bp.route('/logout')
 def logout():
-    """Cerrar sesión"""
-    session.clear()
-    flash('Has cerrado sesión exitosamente', 'success')
+    """Cerrar sesión - se maneja en el frontend con JWT"""
     return redirect(url_for('frontend.login'))
 
 @frontend_bp.route('/profile')
-@login_required
 def profile():
-    """Página de perfil del usuario"""
-    user = User.query.get(session['user_id'])
-    return render_template('profile.html', user=user)
+    """Página de perfil del usuario - se maneja en el frontend con JWT"""
+    return render_template('profile.html')
 
-@frontend_bp.route('/change-password', methods=['GET', 'POST'])
-@login_required
+@frontend_bp.route('/change-password', methods=['GET'])
 def change_password():
-    """Cambiar contraseña"""
-    if request.method == 'POST':
-        current_password = request.form.get('current_password')
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_password')
-        
-        user = User.query.get(session['user_id'])
-        
-        if not user.check_password(current_password):
-            flash('Contraseña actual incorrecta', 'error')
-        elif new_password != confirm_password:
-            flash('Las contraseñas nuevas no coinciden', 'error')
-        elif len(new_password) < 6:
-            flash('La contraseña debe tener al menos 6 caracteres', 'error')
-        else:
-            user.set_password(new_password)
-            from app.database import db
-            db.session.commit()
-            flash('Contraseña cambiada exitosamente', 'success')
-            return redirect(url_for('frontend.profile'))
-    
+    """Cambiar contraseña - se maneja en el frontend con JWT"""
     return render_template('change_password.html')
 
 # Función helper para obtener usuario actual en templates

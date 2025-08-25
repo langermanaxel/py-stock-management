@@ -47,16 +47,10 @@ class ProductSchema(Schema):
         
     )
     
-    # Campos relacionados
-    category = fields.Nested(
-        'CategorySchema', 
-        dump_only=True, 
-        
-    )
-    stock = fields.Nested(
-        'StockSchema', 
-        dump_only=True, 
-        
+    # Campos relacionados (evitar referencias circulares)
+    category_name = fields.Str(
+        dump_only=True,
+        attribute='category.name'
     )
 
 class ProductCreateSchema(Schema):
