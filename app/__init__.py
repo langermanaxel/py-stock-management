@@ -22,6 +22,11 @@ def create_app():
     
     # Configurar JWT
     jwt = JWTManager(app)
+    
+    # Configuración adicional de JWT
+    app.config['JWT_TOKEN_LOCATION'] = ['headers']
+    app.config['JWT_HEADER_NAME'] = 'Authorization'
+    app.config['JWT_HEADER_TYPE'] = 'Bearer'
 
     # Crear contexto de aplicación para importar modelos
     with app.app_context():

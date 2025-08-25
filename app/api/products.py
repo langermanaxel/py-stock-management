@@ -12,7 +12,7 @@ from app.schemas.product import (
     ProductSchema, ProductCreateSchema, ProductUpdateSchema, 
     ProductListSchema, ProductSearchSchema
 )
-from app.middleware.auth_middleware import require_auth, require_permission
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Crear blueprint para productos
 products_blp = Blueprint(
@@ -54,7 +54,7 @@ class Products(MethodView):
             500: {"description": "Error interno del servidor"}
         }
     )
-    @require_auth
+    @jwt_required()
     def get(self):
         """Listar todos los productos"""
         try:
@@ -98,8 +98,7 @@ class Products(MethodView):
             500: {"description": "Error interno del servidor"}
         }
     )
-    @require_auth
-    @require_permission('write')
+    @jwt_required()
     def post(self, product_data):
         """Crear nuevo producto"""
         try:
@@ -156,7 +155,7 @@ class ProductById(MethodView):
             500: {"description": "Error interno del servidor"}
         }
     )
-    @require_auth
+    @jwt_required()
     def get(self, product_id):
         """Obtener producto por ID"""
         try:
@@ -205,8 +204,7 @@ class ProductById(MethodView):
             500: {"description": "Error interno del servidor"}
         }
     )
-    @require_auth
-    @require_permission('write')
+    @jwt_required()
     def put(self, product_data, product_id):
         """Actualizar producto"""
         try:
@@ -259,8 +257,7 @@ class ProductById(MethodView):
             500: {"description": "Error interno del servidor"}
         }
     )
-    @require_auth
-    @require_permission('delete')
+    @jwt_required()
     def delete(self, product_id):
         """Eliminar producto"""
         try:
@@ -310,7 +307,7 @@ class ProductSearch(MethodView):
             500: {"description": "Error interno del servidor"}
         }
     )
-    @require_auth
+    @jwt_required()
     def get(self, search_params):
         """Buscar productos según criterios"""
         try:
@@ -370,7 +367,7 @@ class ProductStock(MethodView):
             500: {"description": "Error interno del servidor"}
         }
     )
-    @require_auth
+    @jwt_required()
     def get(self, product_id):
         """Obtener producto con información de stock"""
         try:

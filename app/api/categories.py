@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.database import db
 from app.models.category import Category
 from app.schemas.category import CategorySchema, CategoryUpdateSchema, CategoryListSchema
-from app.middleware.auth_middleware import require_auth, require_permission
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Crear blueprint para categorías
 categories_blp = Blueprint(
@@ -23,7 +23,7 @@ class Categories(MethodView):
     """Endpoint para listar y crear categorías"""
     
     @categories_blp.response(200, CategoryListSchema)
-    @require_auth
+    @jwt_required()
     def get(self):
         """Listar todas las categorías"""
         try:
@@ -37,8 +37,7 @@ class Categories(MethodView):
     
     @categories_blp.arguments(CategorySchema)
     @categories_blp.response(201, CategorySchema)
-    @require_auth
-    @require_permission('write')
+    @jwt_required()
     def post(self, category_data):
         """Crear nueva categoría"""
         try:
@@ -64,7 +63,7 @@ class CategoryById(MethodView):
     """Endpoint para obtener, actualizar y eliminar categoría por ID"""
     
     @categories_blp.response(200, CategorySchema)
-    @require_auth
+    @jwt_required()
     def get(self, category_id):
         """Obtener categoría por ID"""
         try:
@@ -75,8 +74,7 @@ class CategoryById(MethodView):
     
     @categories_blp.arguments(CategoryUpdateSchema)
     @categories_blp.response(200, CategorySchema)
-    @require_auth
-    @require_permission('write')
+    @jwt_required()
     def put(self, category_data, category_id):
         """Actualizar categoría"""
         try:
@@ -103,8 +101,7 @@ class CategoryById(MethodView):
             abort(500, message=f"Error de base de datos: {str(e)}")
     
     @categories_blp.response(204)
-    @require_auth
-    @require_permission('delete')
+    @jwt_required()
     def delete(self, category_id):
         """Eliminar categoría"""
         try:

@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.database import db
 from app.models.stock import Stock
 from app.schemas.stock import StockSchema, StockCreateSchema, StockUpdateSchema, StockListSchema
-from app.middleware.auth_middleware import require_auth, require_permission
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.validators.stock_validators import validate_stock_creation, validate_stock_update
 
 # Crear blueprint para stock
@@ -24,7 +24,7 @@ class StockItems(MethodView):
     """Endpoint para listar y crear items de stock"""
     
     @stock_blp.response(200, StockListSchema)
-    @require_auth
+    @jwt_required()
     def get(self):
         """Listar todo el stock"""
         try:
@@ -41,8 +41,7 @@ class StockItems(MethodView):
     
     @stock_blp.arguments(StockCreateSchema)
     @stock_blp.response(201, StockSchema)
-    @require_auth
-    @require_permission('write')
+    @jwt_required()
     def post(self, stock_data):
         """Crear nuevo item de stock"""
         try:
@@ -69,7 +68,7 @@ class StockById(MethodView):
     """Endpoint para obtener, actualizar y eliminar stock por ID"""
     
     @stock_blp.response(200, StockSchema)
-    @require_auth
+    @jwt_required()
     def get(self, stock_id):
         """Obtener stock por ID"""
         try:
@@ -80,8 +79,7 @@ class StockById(MethodView):
     
     @stock_blp.arguments(StockUpdateSchema)
     @stock_blp.response(200, StockSchema)
-    @require_auth
-    @require_permission('write')
+    @jwt_required()
     def put(self, stock_data, stock_id):
         """Actualizar stock"""
         try:
@@ -104,8 +102,7 @@ class StockById(MethodView):
             abort(500, message=f"Error de base de datos: {str(e)}")
     
     @stock_blp.response(204)
-    @require_auth
-    @require_permission('delete')
+    @jwt_required()
     def delete(self, stock_id):
         """Eliminar stock"""
         try:
