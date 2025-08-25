@@ -3,6 +3,16 @@ const APP_CONFIG = {
     // URLs de la API
     API_BASE_URL: '/api',
     
+    // Configuración CORS
+    CORS: {
+        credentials: 'same-origin',
+        mode: 'cors',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    },
+    
     // Credenciales de Demo
     DEMO_CREDENTIALS: {
         admin: {

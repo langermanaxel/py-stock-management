@@ -216,6 +216,29 @@ Si tienes preguntas o necesitas ayuda:
         }
     ]
     
+    # Configuración CORS específica para Flask-Smorest
+    app.config["API_SPEC_OPTIONS"] = {
+        "servers": [
+            {
+                "url": "http://localhost:8080",
+                "description": "Servidor de desarrollo local"
+            },
+            {
+                "url": "https://api.empresa.com",
+                "description": "Servidor de producción"
+            }
+        ],
+        "components": {
+            "securitySchemes": {
+                "bearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT"
+                }
+            }
+        }
+    }
+    
     # Inicializar la API
     api.init_app(app)
     

@@ -319,53 +319,96 @@
     </div>
 
     <!-- Incluir configuración y sistema de autenticación JWT -->
-    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <!-- 1. Configuración (debe cargarse primero) -->
+    <script defer src="{{ url_for('static', filename='js/config.js') }}"></script>
+    
+    <!-- 2. Sistema de autenticación JWT -->
+    <script defer src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    
+    <!-- 3. Helper HTTP -->
+    <script defer src="{{ url_for('static', filename='js/http-helper.js') }}"></script>
+    
+    <!-- 4. Helpers de Alpine.js -->
+    <script defer src="{{ url_for('static', filename='js/alpine-helpers.js') }}"></script>
+    
+    <!-- 5. Utilidades de página y guardias -->
+    <script defer src="{{ url_for('static', filename='js/page-utils.js') }}"></script>
+    
+    <!-- 6. Aplicación principal (debe cargarse último) -->
+    <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
     
     <script>
-        // Inicializar el sistema de autenticación
+        // Inicialización segura con guardias por página
         document.addEventListener('DOMContentLoaded', async function() {
-            // Verificar si el usuario está autenticado
-            if (!authManager.isAuthenticated()) {
-                window.location.href = '/login';
-                return;
-            }
+            // Crear instancia del guardia del DOM
+            const guard = new DOMGuard();
             
-            // Inicializar el manager de autenticación
-            await authManager.initialize();
-            
-            // Mostrar información del usuario
-            updateUserInfo();
-            
-            // Actualizar UI según el rol del usuario
-            updateUIForUserRole();
-            
-            // Cargar datos iniciales
-            loadDashboard();
+            // Solo ejecutar en el dashboard
+            guard.executeOnDashboard(async () => {
+                try {
+                    // Verificar si el usuario está autenticado
+                    if (!authManager.isAuthenticated()) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    // Inicializar el manager de autenticación
+                    await authManager.initialize();
+                    
+                    // Mostrar información del usuario
+                    updateUserInfo();
+                    
+                    // Actualizar UI según el rol del usuario
+                    updateUIForUserRole();
+                    
+                    // Cargar datos iniciales
+                    loadDashboard();
+                } catch (error) {
+                    console.error('Error inicializando dashboard:', error);
+                }
+            });
         });
         
-        // Función para mostrar información del usuario
+        // Función para mostrar información del usuario (solo en dashboard)
         function updateUserInfo() {
-            const user = authManager.getUser();
-            if (user) {
-                document.getElementById('userName').textContent = `${user.first_name} ${user.last_name}`;
-                document.getElementById('userRole').textContent = user.role;
-                document.getElementById('userInfo').style.display = 'flex';
-            }
+            const guard = new DOMGuard();
+            guard.safeExecute('#userName', (userNameElement) => {
+                const user = authManager.getUser();
+                if (user && userNameElement) {
+                    userNameElement.textContent = `${user.first_name} ${user.last_name}`;
+                    
+                    // Actualizar rol del usuario
+                    guard.safeExecute('#userRole', (userRoleElement) => {
+                        if (userRoleElement) {
+                            userRoleElement.textContent = user.role;
+                        }
+                    });
+                    
+                    // Mostrar información del usuario
+                    guard.safeExecute('#userInfo', (userInfoElement) => {
+                        if (userInfoElement) {
+                            userInfoElement.style.display = 'flex';
+                        }
+                    });
+                }
+            });
         }
         
-        // Función para mostrar perfil
+        // Función para mostrar perfil (solo en dashboard)
         function showProfile() {
-            showToast('info', 'Perfil', 'Función de perfil en desarrollo');
+            const guard = new DOMGuard();
+            guard.executeOnDashboard(() => {
+                showToast('info', 'Perfil', 'Función de perfil en desarrollo');
+            });
         }
         
-        // Función para logout
+        // Función para logout (solo en dashboard)
         function logout() {
-            authManager.logout();
+            const guard = new DOMGuard();
+            guard.executeOnDashboard(() => {
+                authManager.logout();
+            });
         }
-        
-
     </script>
 </body>
 </html> 

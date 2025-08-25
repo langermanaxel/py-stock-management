@@ -45,85 +45,12 @@ class JWTAuthManager {
         return this.user?.permissions?.includes(permission) || false;
     }
 
-    // Login del usuario
-    async login(username, password) {
-        try {
-            const response = await fetch(`${this.baseURL}/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error en el login');
-            }
-
-            const data = await response.json();
-            
-            // Guardar tokens y información del usuario
-            this.token = data.access_token;
-            this.refreshToken = data.refresh_token;
-            this.user = data.user;
-            
-            localStorage.setItem('jwt_token', this.token);
-            localStorage.setItem('jwt_refresh_token', this.refreshToken);
-            localStorage.setItem('user_info', JSON.stringify(this.user));
-            
-            return { success: true, user: this.user };
-        } catch (error) {
-            console.error('Error en login:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    // Logout del usuario
-    logout() {
-        this.token = null;
-        this.refreshToken = null;
-        this.user = null;
-        
-        localStorage.removeItem('jwt_token');
-        localStorage.removeItem('jwt_refresh_token');
-        localStorage.removeItem('user_info');
-        
-        // Redirigir al login
-        window.location.href = '/login';
-    }
-
-    // Refrescar token
-    async refreshAccessToken() {
-        if (!this.refreshToken) {
-            this.logout();
-            return false;
-        }
-
-        try {
-            const response = await fetch(`${this.baseURL}/auth/refresh`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.refreshToken}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Error al refrescar token');
-            }
-
-            const data = await response.json();
-            this.token = data.access_token;
-            localStorage.setItem('jwt_token', this.token);
-            return true;
-        } catch (error) {
-            console.error('Error al refrescar token:', error);
-            this.logout();
-            return false;
-        }
-    }
-
-    // Hacer petición HTTP con autenticación automática
+    /**
+     * Realiza una petición autenticada a la API
+     * @param {string} url - URL completa de la API
+     * @param {Object} options - Opciones de fetch
+     * @returns {Promise<Object>} Respuesta de la API
+     */
     async authenticatedRequest(url, options = {}) {
         if (!this.token) {
             this.logout();
@@ -140,7 +67,9 @@ class JWTAuthManager {
         try {
             const response = await fetch(url, {
                 ...options,
-                headers
+                headers,
+                credentials: 'same-origin',
+                mode: 'cors'
             });
 
             // Si el token expiró, intentar refrescarlo
@@ -161,6 +90,213 @@ class JWTAuthManager {
         } catch (error) {
             console.error('Error en petición autenticada:', error);
             return null;
+        }
+    }
+
+    /**
+     * Parsea respuestas de error del backend en diferentes formatos
+     * @param {Response} response - Objeto Response de fetch
+     * @param {string} fallbackMessage - Mensaje por defecto si no se puede parsear
+     * @returns {Error} Error con mensaje extraído del backend
+     */
+    async parseErrorResponse(response, fallbackMessage = 'Error en la petición') {
+        let errorMessage = fallbackMessage;
+        let errorDetails = null;
+
+        try {
+            // Intentar parsear como JSON primero
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const errorData = await response.json();
+                
+                // Buscar mensaje en diferentes campos comunes del backend
+                if (errorData.msg) {
+                    errorMessage = errorData.msg;
+                } else if (errorData.message) {
+                    errorMessage = errorData.message;
+                } else if (errorData.detail) {
+                    errorMessage = errorData.detail;
+                } else if (errorData.error) {
+                    errorMessage = errorData.error;
+                } else if (errorData.description) {
+                    errorMessage = errorData.description;
+                } else if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                } else if (errorData && typeof errorData === 'object') {
+                    // Si es un objeto, buscar el primer valor string
+                    const firstStringValue = Object.values(errorData).find(val => typeof val === 'string');
+                    if (firstStringValue) {
+                        errorMessage = firstStringValue;
+                    }
+                }
+
+                // Guardar detalles adicionales si existen
+                if (errorData.details) {
+                    errorDetails = errorData.details;
+                } else if (errorData.errors) {
+                    errorDetails = errorData.errors;
+                }
+            } else {
+                // Si no es JSON, intentar leer como texto
+                try {
+                    const textResponse = await response.text();
+                    if (textResponse && textResponse.trim()) {
+                        // Buscar contenido HTML y extraer solo el texto útil
+                        if (textResponse.includes('<html') || textResponse.includes('<body')) {
+                            // Es HTML, extraer solo el texto del body
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = textResponse;
+                            const bodyText = tempDiv.textContent || tempDiv.innerText || '';
+                            if (bodyText.trim()) {
+                                errorMessage = bodyText.trim().substring(0, 200); // Limitar longitud
+                            }
+                        } else {
+                            errorMessage = textResponse.trim();
+                        }
+                    }
+                } catch (textError) {
+                    console.warn('No se pudo leer respuesta como texto:', textError);
+                }
+            }
+        } catch (parseError) {
+            console.warn('Error parseando respuesta de error:', parseError);
+            // Mantener el mensaje por defecto
+        }
+
+        // Crear error con información completa
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        error.statusText = response.statusText;
+        error.url = response.url;
+        error.details = errorDetails;
+        error.response = response;
+
+        return error;
+    }
+
+    /**
+     * Parsea respuestas exitosas del backend
+     * @param {Response} response - Objeto Response de fetch
+     * @returns {Promise<Object>} Respuesta parseada
+     */
+    async parseResponse(response) {
+        try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                // Si no es JSON, devolver el texto
+                return await response.text();
+            }
+        } catch (parseError) {
+            console.warn('Error parseando respuesta exitosa:', parseError);
+            return { success: true, message: 'Operación completada' };
+        }
+    }
+
+    /**
+     * Inicia sesión del usuario
+     * @param {string} username - Nombre de usuario
+     * @param {string} password - Contraseña
+     * @returns {Promise<Object>} Respuesta del servidor
+     */
+    async login(username, password) {
+        try {
+            const response = await fetch(`${this.baseURL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+                credentials: 'same-origin',
+                mode: 'cors'
+            });
+
+            if (!response.ok) {
+                const error = await this.parseErrorResponse(response);
+                throw error;
+            }
+
+            const data = await this.parseResponse(response);
+            
+            if (data.access_token) {
+                this.token = data.access_token;
+                this.refreshToken = data.refresh_token;
+                this.user = data.user;
+                
+                // Guardar en localStorage
+                localStorage.setItem('jwt_token', this.token);
+                localStorage.setItem('jwt_refresh_token', this.refreshToken);
+                localStorage.setItem('user_info', JSON.stringify(this.user));
+                
+                // Emitir evento de login exitoso
+                window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: this.user }));
+                
+                return data;
+            } else {
+                throw new Error('Respuesta del servidor inválida: token no encontrado');
+            }
+
+        } catch (error) {
+            // Si ya es un error parseado, re-lanzarlo
+            if (error.status) {
+                throw error;
+            }
+            
+            // Si es un error de red, crear uno más descriptivo
+            const networkError = new Error(`Error de red: ${error.message}`);
+            networkError.isNetworkError = true;
+            networkError.originalError = error;
+            throw networkError;
+        }
+    }
+
+    /**
+     * Refresca el token de acceso usando el refresh token
+     * @returns {Promise<Object>} Respuesta del servidor
+     */
+    async refreshAccessToken() {
+        if (!this.refreshToken) {
+            this.logout();
+            return false;
+        }
+
+        try {
+            const response = await fetch(`${this.baseURL}/auth/refresh`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.refreshToken}`
+                },
+                credentials: 'same-origin',
+                mode: 'cors'
+            });
+
+            if (!response.ok) {
+                const error = await this.parseErrorResponse(response);
+                throw error;
+            }
+
+            const data = await this.parseResponse(response);
+            
+            if (data.access_token) {
+                this.token = data.access_token;
+                localStorage.setItem('jwt_token', this.token);
+                return true;
+            } else {
+                throw new Error('Respuesta del servidor inválida: nuevo token no encontrado');
+            }
+
+        } catch (error) {
+            // Si ya es un error parseado, re-lanzarlo
+            if (error.status) {
+                throw error;
+            }
+            
+            // Si es un error de red, crear uno más descriptivo
+            const networkError = new Error(`Error de red: ${error.message}`);
+            networkError.isNetworkError = true;
+            networkError.originalError = error;
+            throw networkError;
         }
     }
 

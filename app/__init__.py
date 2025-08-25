@@ -12,7 +12,11 @@ def create_app():
     app.config.from_object(Config)
     
     # Configurar CORS para permitir peticiones desde el frontend
-    CORS(app, resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}})
+    CORS(app, 
+         resources={r"/*": {"origins": app.config["CORS_ORIGINS"]}},
+         supports_credentials=True,
+         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'])
 
     # Inicializar SQLAlchemy PRIMERO
     db.init_app(app)

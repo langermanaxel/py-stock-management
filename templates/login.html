@@ -244,31 +244,78 @@
     </div>
     
     <!-- Incluir configuración y sistema de autenticación JWT -->
-    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <!-- 1. Configuración (debe cargarse primero) -->
+    <script defer src="{{ url_for('static', filename='js/config.js') }}"></script>
+    
+    <!-- 2. Sistema de autenticación JWT -->
+    <script defer src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    
+    <!-- 3. Helper HTTP -->
+    <script defer src="{{ url_for('static', filename='js/http-helper.js') }}"></script>
+    
+    <!-- 4. Utilidades de página y guardias -->
+    <script defer src="{{ url_for('static', filename='js/page-utils.js') }}"></script>
     
     <script>
-        // Auto-focus en el primer campo
-        document.getElementById('username').focus();
+        // Inicialización segura con guardias por página
+        document.addEventListener('DOMContentLoaded', function() {
+            const guard = new DOMGuard();
+            
+            // Solo ejecutar en la página de login
+            guard.executeOnLogin(() => {
+                initializeLoginPage();
+            });
+        });
         
-        // Manejo del formulario de login con JWT
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Inicialización de la página de login
+        function initializeLoginPage() {
+            const guard = new DOMGuard();
             
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
+            // Auto-focus en el primer campo (de forma segura)
+            guard.safeExecute('#username', (usernameField) => {
+                usernameField.focus();
+            });
             
-            if (!username || !password) {
-                showToast('error', 'Error', 'Por favor completa todos los campos');
-                return false;
-            }
+            // Manejo del formulario de login con JWT (de forma segura)
+            guard.safeAddEventListener('#loginForm', 'submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value.trim();
+                
+                if (!username || !password) {
+                    showToast('error', 'Error', 'Por favor completa todos los campos');
+                    return false;
+                }
+                
+                // Mostrar indicador de carga (de forma segura)
+                guard.safeExecute('.login-btn', (btn) => {
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+                    btn.disabled = true;
+                    
+                    // Procesar login
+                    processLogin(username, password, btn, originalText);
+                });
+            });
             
-            // Mostrar indicador de carga
-            const btn = document.querySelector('.login-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
-            btn.disabled = true;
-            
+            // Limpiar mensajes flash después de 5 segundos
+            setTimeout(function() {
+                guard.safeExecute('.flash-messages', (container) => {
+                    const flashMessages = container.querySelectorAll('.flash-message');
+                    flashMessages.forEach(function(msg) {
+                        msg.style.opacity = '0';
+                        msg.style.transition = 'opacity 0.5s ease';
+                        setTimeout(function() {
+                            msg.remove();
+                        }, 500);
+                    });
+                });
+            }, 5000);
+        }
+        
+        // Procesar el login de forma segura
+        async function processLogin(username, password, btn, originalText) {
             try {
                 // Intentar login con JWT
                 const result = await authManager.login(username, password);
@@ -282,45 +329,46 @@
                     }, 1000);
                 } else {
                     showToast('error', 'Error', result.error || 'Error en el login');
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
+                    resetLoginButton(btn, originalText);
                 }
             } catch (error) {
                 showToast('error', 'Error', 'Error de conexión. Intenta nuevamente.');
+                resetLoginButton(btn, originalText);
+            }
+        }
+        
+        // Resetear botón de login
+        function resetLoginButton(btn, originalText) {
+            if (btn) {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
-        });
+        }
         
         // Función simple para mostrar toasts (fallback)
         function showToast(type, title, message) {
-            // Crear un toast simple si no hay sistema de toasts
-            const toast = document.createElement('div');
-            toast.className = `flash-message flash-${type}`;
-            toast.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                <strong>${title}:</strong> ${message}
-            `;
+            const guard = new DOMGuard();
             
-            document.querySelector('.flash-messages').appendChild(toast);
-            
-            // Remover después de 5 segundos
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-        
-        // Limpiar mensajes flash después de 5 segundos
-        setTimeout(function() {
-            const flashMessages = document.querySelectorAll('.flash-message');
-            flashMessages.forEach(function(msg) {
-                msg.style.opacity = '0';
-                msg.style.transition = 'opacity 0.5s ease';
-                setTimeout(function() {
-                    msg.remove();
-                }, 500);
+            // Solo ejecutar en la página de login
+            guard.executeOnLogin(() => {
+                // Crear un toast simple si no hay sistema de toasts
+                guard.safeExecute('.flash-messages', (container) => {
+                    const toast = document.createElement('div');
+                    toast.className = `flash-message flash-${type}`;
+                    toast.innerHTML = `
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                        <strong>${title}:</strong> ${message}
+                    `;
+                    
+                    container.appendChild(toast);
+                    
+                    // Remover después de 5 segundos
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 5000);
+                });
             });
-        }, 5000);
+        }
     </script>
 </body>
 </html>

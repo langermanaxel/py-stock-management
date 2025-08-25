@@ -19,7 +19,7 @@ class Config:
     DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
     
     # Configuración de CORS
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://127.0.0.1:5000').split(',')
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5000,http://127.0.0.1:5000,http://localhost:8080,http://127.0.0.1:8080').split(',')
     
     # Configuración de logs
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')

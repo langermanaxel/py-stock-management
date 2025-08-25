@@ -1,238 +1,69 @@
-// Sistema de Notificaciones Toast con Alpine.js
-function toastManager() {
-    return {
-        toasts: [],
-        nextId: 1,
-        
-        showToast(type, title, message, duration = 5000) {
-            const toast = {
-                id: this.nextId++,
-                type,
-                title,
-                message,
-                visible: true,
-                timestamp: Date.now()
-            };
-            
-            this.toasts.push(toast);
-            
-            // Auto-remove después del tiempo especificado
-            setTimeout(() => {
-                this.removeToast(toast.id);
-            }, duration);
-            
-            return toast.id;
-        },
-        
-        removeToast(id) {
-            const index = this.toasts.findIndex(t => t.id === id);
-            if (index > -1) {
-                this.toasts.splice(index, 1);
-            }
-        },
-        
-        getToastIcon(type) {
-            const icons = {
-                success: 'fas fa-check-circle',
-                error: 'fas fa-exclamation-circle',
-                warning: 'fas fa-exclamation-triangle',
-                info: 'fas fa-info-circle'
-            };
-            return icons[type] || icons.info;
-        },
-        
-        // Métodos de conveniencia
-        success(title, message, duration) {
-            return this.showToast('success', title, message, duration);
-        },
-        
-        error(title, message, duration) {
-            return this.showToast('error', title, message, duration);
-        },
-        
-        warning(title, message, duration) {
-            return this.showToast('warning', title, message, duration);
-        },
-        
-        info(title, message, duration) {
-            return this.showToast('info', title, message, duration);
-        }
-    };
-}
-
-// Validador de Formularios con Alpine.js
-function formValidator() {
-    return {
-        formData: {},
-        errors: {},
-        
-        validateField(fieldName) {
-            const field = this.$el.querySelector(`[name="${fieldName}"]`);
-            if (!field) return;
-            
-            const value = field.value;
-            const rules = this.getFieldRules(fieldName);
-            
-            // Limpiar error previo
-            this.errors[fieldName] = null;
-            
-            // Aplicar validaciones
-            for (const rule of rules) {
-                const result = this.validateRule(value, rule);
-                if (result !== true) {
-                    this.errors[fieldName] = result;
-                    break;
-                }
-            }
-            
-            // Actualizar clases CSS
-            this.updateFieldClasses(field, fieldName);
-        },
-        
-        getFieldRules(fieldName) {
-            const rules = [];
-            const field = this.$el.querySelector(`[name="${fieldName}"]`);
-            
-            if (!field) return rules;
-            
-            // Reglas basadas en atributos HTML5
-            if (field.required) {
-                rules.push({ type: 'required', message: 'Este campo es requerido' });
-            }
-            
-            if (field.minLength) {
-                rules.push({ 
-                    type: 'minLength', 
-                    value: field.minLength, 
-                    message: `Mínimo ${field.minLength} caracteres` 
-                });
-            }
-            
-            if (field.maxLength) {
-                rules.push({ 
-                    type: 'maxLength', 
-                    value: field.maxLength, 
-                    message: `Máximo ${field.maxLength} caracteres` 
-                });
-            }
-            
-            if (field.min) {
-                rules.push({ 
-                    type: 'min', 
-                    value: parseFloat(field.min), 
-                    message: `Valor mínimo: ${field.min}` 
-                });
-            }
-            
-            if (field.step) {
-                rules.push({ 
-                    type: 'step', 
-                    value: parseFloat(field.step), 
-                    message: `Incremento: ${field.step}` 
-                });
-            }
-            
-            // Reglas específicas por campo
-            if (fieldName === 'email') {
-                rules.push({ 
-                    type: 'email', 
-                    message: 'Formato de email inválido' 
-                });
-            }
-            
-            if (fieldName === 'price' || fieldName === 'unit_price') {
-                rules.push({ 
-                    type: 'positive', 
-                    message: 'El precio debe ser positivo' 
-                });
-            }
-            
-            if (fieldName === 'quantity') {
-                rules.push({ 
-                    type: 'positive', 
-                    message: 'La cantidad debe ser positiva' 
-                });
-            }
-            
-            return rules;
-        },
-        
-        validateRule(value, rule) {
-            switch (rule.type) {
-                case 'required':
-                    return value.trim() !== '' ? true : rule.message;
-                    
-                case 'minLength':
-                    return value.length >= rule.value ? true : rule.message;
-                    
-                case 'maxLength':
-                    return value.length <= rule.value ? true : rule.message;
-                    
-                case 'min':
-                    return parseFloat(value) >= rule.value ? true : rule.message;
-                    
-                case 'step':
-                    const num = parseFloat(value);
-                    const step = rule.value;
-                    return (num % step) === 0 ? true : rule.message;
-                    
-                case 'email':
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    return emailRegex.test(value) ? true : rule.message;
-                    
-                case 'positive':
-                    return parseFloat(value) > 0 ? true : rule.message;
-                    
-                default:
-                    return true;
-            }
-        },
-        
-        updateFieldClasses(field, fieldName) {
-            field.classList.remove('success', 'error');
-            
-            if (this.errors[fieldName]) {
-                field.classList.add('error');
-            } else if (field.value.trim() !== '') {
-                field.classList.add('success');
-            }
-        },
-        
-        validateForm() {
-            const fields = this.$el.querySelectorAll('[name]');
-            let isValid = true;
-            
-            fields.forEach(field => {
-                this.validateField(field.name);
-                if (this.errors[field.name]) {
-                    isValid = false;
-                }
-            });
-            
-            return isValid;
-        },
-        
-        resetForm() {
-            this.formData = {};
-            this.errors = {};
-            this.$el.reset();
-            
-            // Limpiar clases CSS
-            const fields = this.$el.querySelectorAll('input, select, textarea');
-            fields.forEach(field => {
-                field.classList.remove('success', 'error');
-            });
-        }
-    };
-}
+// ========================================
+// SISTEMA DE GESTIÓN DE INVENTARIO - APP.JS
+// ========================================
 
 // Variables globales
 let purchaseItems = [];
 let currentTab = 'dashboard';
 
+// Sistema de inicialización robusto
+class AppInitializer {
+    constructor() {
+        this.initialized = false;
+        this.initQueue = [];
+    }
+
+    // Agregar función a la cola de inicialización
+    addToInitQueue(fn) {
+        if (this.initialized) {
+            fn();
+        } else {
+            this.initQueue.push(fn);
+        }
+    }
+
+    // Marcar como inicializado y ejecutar cola
+    markAsInitialized() {
+        this.initialized = true;
+        this.initQueue.forEach(fn => fn());
+        this.initQueue = [];
+    }
+
+    // Verificar si está inicializado
+    isInitialized() {
+        return this.initialized;
+    }
+}
+
+// Instancia global del inicializador
+const appInitializer = new AppInitializer();
+
+// Función helper para esperar a que authManager esté listo
+async function waitForAuthManager() {
+    // Esperar a que authManager esté disponible
+    while (!window.authManager || !window.authManager.isAuthenticated()) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Esperar a que se inicialice completamente
+    await window.authManager.initialize();
+    return true;
+}
+
+// ========================================
+// INICIALIZACIÓN DE LA APLICACIÓN
+// ========================================
+
 // Inicialización cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    // Esperar a que authManager esté listo antes de inicializar
+    waitForAuthManager().then(() => {
+        initializeApp();
+        appInitializer.markAsInitialized();
+    }).catch(error => {
+        console.error('Error inicializando authManager:', error);
+        showToast('error', 'Error', 'No se pudo inicializar la aplicación');
+    });
 });
 
 // Función de inicialización principal
@@ -244,37 +75,38 @@ function initializeApp() {
 
 // Configuración de event listeners
 function setupEventListeners() {
-    // Navegación móvil
-    const navToggle = document.querySelector('.nav-toggle');
-    const navMenu = document.querySelector('.nav-menu');
+    const guard = new DOMGuard();
     
-    if (navToggle && navMenu) {
-        navToggle.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
+    // Solo ejecutar en el dashboard
+    guard.executeOnDashboard(() => {
+        // Navegación móvil
+        guard.safeAddEventListener('.nav-toggle', 'click', () => {
+            guard.safeExecute('.nav-menu', (navMenu) => {
+                navMenu.classList.toggle('active');
+            });
         });
-    }
-    
-    // Cerrar menú móvil al hacer click en un enlace
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-            if (navMenu) {
-                navMenu.classList.remove('active');
-            }
+        
+        // Cerrar menú móvil al hacer click en un enlace
+        guard.safeExecute('.nav-menu', (navMenu) => {
+            const navLinks = navMenu.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    navMenu.classList.remove('active');
+                });
+            });
         });
+        
+        // Búsqueda de productos
+        guard.safeAddEventListener('#productSearch', 'input', filterProducts);
+        
+        // Filtro de categorías
+        guard.safeAddEventListener('#categoryFilter', 'change', filterProducts);
     });
-    
-    // Búsqueda de productos
-    const productSearch = document.getElementById('productSearch');
-    if (productSearch) {
-        productSearch.addEventListener('input', filterProducts);
-    }
-    
-    // Filtro de categorías
-    const categoryFilter = document.getElementById('categoryFilter');
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', filterProducts);
-    }
 }
+
+// ========================================
+// NAVEGACIÓN Y TABS
+// ========================================
 
 // Navegación entre tabs
 function showTab(tabName) {
@@ -305,403 +137,402 @@ function showTab(tabName) {
 
 // Cargar datos según el tab activo
 function loadTabData() {
-    switch (currentTab) {
-        case 'dashboard':
-            updateDashboard();
-            break;
-        case 'categories':
-            loadCategories();
-            break;
-        case 'products':
-            loadProducts();
-            loadCategoriesForProducts();
-            break;
-        case 'stock':
-            loadStock();
-            loadProductsForStock();
-            break;
-        case 'orders':
-            loadPurchaseOrders();
-            loadProductsForOrders();
-            break;
-        case 'purchases':
-            loadCompletedPurchases();
-            break;
-    }
+    // Esperar a que la app esté inicializada
+    appInitializer.addToInitQueue(() => {
+        switch (currentTab) {
+            case 'dashboard':
+                updateDashboard();
+                break;
+            case 'categories':
+                loadCategories();
+                break;
+            case 'products':
+                loadProducts();
+                loadCategoriesForProducts();
+                break;
+            case 'stock':
+                loadStock();
+                loadProductsForStock();
+                break;
+            case 'orders':
+                loadPurchaseOrders();
+                loadProductsForOrders();
+                break;
+            case 'purchases':
+                loadCompletedPurchases();
+                break;
+        }
+    });
 }
 
+// ========================================
+// FUNCIONES DE CARGA DE DATOS
+// ========================================
+
 // Dashboard
-function updateDashboard() {
-    Promise.all([
-        fetch('/api/products/').then(res => res.json()),
-        fetch('/api/stock/').then(res => res.json()),
-        fetch('/api/orders/').then(res => res.json()),
-        fetch('/api/purchases/').then(res => res.json())
-    ]).then(([products, stock, orders, purchases]) => {
+async function updateDashboard() {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        console.warn('AuthManager no disponible, saltando carga del dashboard');
+        return;
+    }
+
+    try {
+        const [productsRes, stockRes, ordersRes, purchasesRes] = await Promise.all([
+            authManager.authenticatedRequest('/api/products/'),
+            authManager.authenticatedRequest('/api/stock/'),
+            authManager.authenticatedRequest('/api/orders/'),
+            authManager.authenticatedRequest('/api/purchases/')
+        ]);
+        
+        if (!productsRes || !stockRes || !ordersRes || !purchasesRes) return;
+        
+        const [products, stock, orders, purchases] = await Promise.all([
+            productsRes.json(),
+            stockRes.json(),
+            ordersRes.json(),
+            purchasesRes.json()
+        ]);
+        
         document.getElementById('totalProducts').textContent = products.products?.length || 0;
         document.getElementById('lowStockCount').textContent = stock.low_stock_count || 0;
         document.getElementById('pendingOrders').textContent = orders.pending_count || 0;
         document.getElementById('pendingPurchases').textContent = purchases.pending_count || 0;
-    }).catch(error => {
+    } catch (error) {
         console.error('Error cargando dashboard:', error);
         showToast('error', 'Error', 'No se pudo cargar el dashboard');
-    });
+    }
 }
 
-// Categorías
+// Función para cargar categorías
 async function loadCategories() {
+    try {
+        if (!authManager.isAuthenticated()) {
+            console.warn('Usuario no autenticado, saltando carga de categorías');
+            return;
+        }
+
+        const categories = await authManager.authenticatedRequest('/api/categories');
+        if (categories && Array.isArray(categories)) {
+            window.categories = categories;
+            updateCategoryFilter();
+            updateCategoryTable();
+        }
+    } catch (error) {
+        showError(error, 'Error cargando categorías');
+    }
+}
+
+// Función para cargar productos
+async function loadProducts() {
+    try {
+        if (!authManager.isAuthenticated()) {
+            console.warn('Usuario no autenticado, saltando carga de productos');
+            return;
+        }
+
+        const products = await authManager.authenticatedRequest('/api/products');
+        if (products && Array.isArray(products)) {
+            window.products = products;
+            updateProductTable();
+            updateProductSearch();
+        }
+    } catch (error) {
+        showError(error, 'Error cargando productos');
+    }
+}
+
+// Función para cargar stock
+async function loadStock() {
+    try {
+        if (!authManager.isAuthenticated()) {
+            console.warn('Usuario no autenticado, saltando carga de stock');
+            return;
+        }
+
+        const stock = await authManager.authenticatedRequest('/api/stock');
+        if (stock && Array.isArray(stock)) {
+            window.stock = stock;
+            updateStockTable();
+        }
+    } catch (error) {
+        showError(error, 'Error cargando stock');
+    }
+}
+
+// Órdenes de compra
+async function loadPurchaseOrders() {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        console.warn('AuthManager no disponible, saltando carga de órdenes');
+        return;
+    }
+
+    try {
+        const response = await authManager.authenticatedRequest('/api/purchases/');
+        if (!response) return;
+        
+        const data = await response.json();
+        const ordersList = document.getElementById('ordersList');
+        const pendingOrders = data.purchase_orders?.filter(po => po.status === 'pending') || [];
+        
+        if (pendingOrders.length > 0) {
+            ordersList.innerHTML = pendingOrders.map(order => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <div class="list-item-title">${order.supplier_name}</div>
+                        <div class="list-item-actions">
+                            <button class="btn btn-success btn-sm" onclick="completePurchaseOrder(${order.id})">
+                                <i class="fas fa-check"></i> Completar
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deletePurchaseOrder(${order.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-muted">Total: $${order.total}</p>
+                    <div class="order-items">
+                        ${order.items?.map(item => `
+                            <span class="badge badge-secondary">
+                                ${item.product?.name || 'Producto no encontrado'} x${item.quantity}
+                            </span>
+                        `).join('') || ''}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            ordersList.innerHTML = '<p class="text-muted text-center">No hay órdenes pendientes</p>';
+        }
+    } catch (error) {
+        console.error('Error cargando órdenes:', error);
+        showToast('error', 'Error', 'No se pudieron cargar las órdenes');
+    }
+}
+
+// Compras completadas
+async function loadCompletedPurchases() {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        console.warn('AuthManager no disponible, saltando carga de compras');
+        return;
+    }
+
+    try {
+        const response = await authManager.authenticatedRequest('/api/purchases/');
+        if (!response) return;
+        
+        const data = await response.json();
+        const purchasesList = document.getElementById('purchasesList');
+        const completedPurchases = data.purchase_orders?.filter(po => po.status === 'completed') || [];
+        
+        if (completedPurchases.length > 0) {
+            purchasesList.innerHTML = completedPurchases.map(purchase => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <div class="list-item-title">${purchase.supplier_name}</div>
+                        <span class="badge badge-success">Completada</span>
+                    </div>
+                    <p class="text-muted">Total: $${purchase.total}</p>
+                    <p class="text-muted">Completada: ${new Date(purchase.updated_at).toLocaleDateString()}</p>
+                    <div class="purchase-items">
+                        ${purchase.items?.map(item => `
+                            <span class="badge badge-secondary">
+                                ${item.product?.name || 'Producto no encontrado'} x${item.quantity}
+                            </span>
+                        `).join('') || ''}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            purchasesList.innerHTML = '<p class="text-muted text-center">No hay compras completadas</p>';
+        }
+    } catch (error) {
+        console.error('Error cargando compras:', error);
+        showToast('error', 'Error', 'No se pudieron cargar las compras');
+    }
+}
+
+// Cargar datos para formularios
+async function loadCategoriesForProducts() {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        console.warn('AuthManager no disponible, saltando carga de categorías para productos');
+        return;
+    }
+
     try {
         const response = await authManager.authenticatedRequest('/api/categories/');
         if (!response) return;
         
         const data = await response.json();
-        const categoriesList = document.getElementById('categoriesList');
-        if (data.categories && data.categories.length > 0) {
-            categoriesList.innerHTML = data.categories.map(category => `
-                <div class="list-item">
-                    <div class="list-item-header">
-                        <div class="list-item-title">${category.name}</div>
-                        <div class="list-item-actions">
-                            ${authManager.hasAnyRole(['admin', 'manager']) ? `
-                                <button class="btn btn-secondary btn-sm" onclick="editCategory(${category.id})" data-role="manager">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            ` : ''}
-                            ${authManager.hasRole('admin') ? `
-                                <button class="btn btn-danger btn-sm" onclick="deleteCategory(${category.id})" data-role="admin">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                    ${category.description ? `<p class="text-muted">${category.description}</p>` : ''}
-                </div>
-            `).join('');
-        } else {
-            categoriesList.innerHTML = '<p class="text-muted text-center">No hay categorías creadas</p>';
+        const categorySelect = document.getElementById('productCategory');
+        if (categorySelect && data.categories) {
+            categorySelect.innerHTML = '<option value="">Seleccionar categoría</option>' +
+                data.categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
         }
     } catch (error) {
         console.error('Error cargando categorías:', error);
-        showToast('error', 'Error', 'No se pudieron cargar las categorías');
     }
 }
 
-// Productos
-async function loadProducts() {
+async function loadProductsForStock() {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        console.warn('AuthManager no disponible, saltando carga de productos para stock');
+        return;
+    }
+
     try {
         const response = await authManager.authenticatedRequest('/api/products/');
         if (!response) return;
         
         const data = await response.json();
-        const productsList = document.getElementById('productsList');
-        if (data.products && data.products.length > 0) {
-            productsList.innerHTML = data.products.map(product => `
-                <div class="list-item">
-                    <div class="list-item-header">
-                        <div class="list-item-title">${product.name}</div>
-                        <div class="list-item-actions">
-                            ${authManager.hasAnyRole(['admin', 'manager']) ? `
-                                <button class="btn btn-secondary btn-sm" onclick="editProduct(${product.id})" data-role="manager">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            ` : ''}
-                            ${authManager.hasRole('admin') ? `
-                                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})" data-role="admin">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                    <p class="text-muted">${product.description}</p>
-                    <div class="product-details">
-                        <span class="badge badge-primary">$${product.price}</span>
-                        <span class="badge badge-secondary">${product.category?.name || 'Sin categoría'}</span>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            productsList.innerHTML = '<p class="text-muted text-center">No hay productos creados</p>';
+        const productSelect = document.getElementById('stockProduct');
+        if (productSelect && data.products) {
+            productSelect.innerHTML = '<option value="">Seleccionar producto</option>' +
+                data.products.map(prod => `<option value="${prod.id}">${prod.name}</option>`).join('');
         }
     } catch (error) {
         console.error('Error cargando productos:', error);
-        showToast('error', 'Error', 'No se pudieron cargar los productos');
     }
 }
 
-// Stock
-async function loadStock() {
+async function loadProductsForOrders() {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        console.warn('AuthManager no disponible, saltando carga de productos para órdenes');
+        return;
+    }
+
     try {
-        const response = await authManager.authenticatedRequest('/api/stock/');
+        const response = await authManager.authenticatedRequest('/api/products/');
         if (!response) return;
         
         const data = await response.json();
-        const stockList = document.getElementById('stockList');
-        if (data.stock_items && data.stock_items.length > 0) {
-            stockList.innerHTML = data.stock_items.map(item => `
-                <div class="list-item ${item.quantity <= item.min_stock ? 'low-stock' : ''}">
-                    <div class="list-item-header">
-                        <div class="list-item-title">${item.product?.name || 'Producto no encontrado'}</div>
-                        <div class="list-item-actions">
-                            ${authManager.hasAnyRole(['admin', 'manager']) ? `
-                                <button class="btn btn-secondary btn-sm" onclick="editStock(${item.id})" data-role="manager">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                    <div class="stock-details">
-                        <span class="badge badge-info">Stock: ${item.quantity}</span>
-                        <span class="badge badge-warning">Mínimo: ${item.min_stock}</span>
-                        ${item.quantity <= item.min_stock ? '<span class="badge badge-danger">Stock Bajo</span>' : ''}
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            stockList.innerHTML = '<p class="text-muted text-center">No hay registros de stock</p>';
+        const productSelect = document.getElementById('productSelect');
+        if (productSelect && data.products) {
+            productSelect.innerHTML = '<option value="">Seleccionar producto</option>' +
+                data.products.map(prod => `<option value="${prod.id}">${prod.name}</option>`).join('');
         }
     } catch (error) {
-        console.error('Error cargando stock:', error);
-        showToast('error', 'Error', 'No se pudo cargar el stock');
+        console.error('Error cargando productos:', error);
+    }
+}
+
+// ========================================
+// FUNCIONES DE FORMULARIOS
+// ========================================
+
+// Función para crear categoría
+async function submitCategory(event) {
+    event.preventDefault();
+    
+    try {
+        const formData = new FormData(event.target);
+        const categoryData = {
+            name: formData.get('name'),
+            description: formData.get('description')
+        };
+
+        const response = await authManager.authenticatedRequest('/api/categories', {
+            method: 'POST',
+            body: JSON.stringify(categoryData)
+        });
+
+        showSuccess('Categoría creada exitosamente');
+        event.target.reset();
+        await loadCategories();
+        
+        // Cerrar modal si existe
+        const modal = document.querySelector('#categoryModal');
+        if (modal && window.bootstrap) {
+            const bootstrapModal = window.bootstrap.Modal.getInstance(modal);
+            if (bootstrapModal) {
+                bootstrapModal.hide();
+            }
+        }
+    } catch (error) {
+        showError(error, 'Error creando categoría');
+    }
+}
+
+// Función para crear producto
+async function submitProduct(event) {
+    event.preventDefault();
+    
+    try {
+        const formData = new FormData(event.target);
+        const productData = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            price: parseFloat(formData.get('price')),
+            category_id: parseInt(formData.get('category_id'))
+        };
+
+        const response = await authManager.authenticatedRequest('/api/products', {
+            method: 'POST',
+            body: JSON.stringify(productData)
+        });
+
+        showSuccess('Producto creado exitosamente');
+        event.target.reset();
+        await loadProducts();
+        
+        // Cerrar modal si existe
+        const modal = document.querySelector('#productModal');
+        if (modal && window.bootstrap) {
+            const bootstrapModal = window.bootstrap.Modal.getInstance(modal);
+            if (bootstrapModal) {
+                bootstrapModal.hide();
+            }
+        }
+    } catch (error) {
+        showError(error, 'Error creando producto');
+    }
+}
+
+// Función para crear stock
+async function submitStock(event) {
+    event.preventDefault();
+    
+    try {
+        const formData = new FormData(event.target);
+        const stockData = {
+            product_id: parseInt(formData.get('product_id')),
+            quantity: parseInt(formData.get('quantity')),
+            location: formData.get('location')
+        };
+
+        const response = await authManager.authenticatedRequest('/api/stock', {
+            method: 'POST',
+            body: JSON.stringify(stockData)
+        });
+
+        showSuccess('Stock creado exitosamente');
+        event.target.reset();
+        await loadStock();
+        
+        // Cerrar modal si existe
+        const modal = document.querySelector('#stockModal');
+        if (modal && window.bootstrap) {
+            const bootstrapModal = window.bootstrap.Modal.getInstance(modal);
+            if (bootstrapModal) {
+                bootstrapModal.hide();
+            }
+        }
+    } catch (error) {
+        showError(error, 'Error creando stock');
     }
 }
 
 // Órdenes de compra
-function loadPurchaseOrders() {
-    fetch('/api/purchases/')
-        .then(response => response.json())
-        .then(data => {
-            const ordersList = document.getElementById('ordersList');
-            const pendingOrders = data.purchase_orders?.filter(po => po.status === 'pending') || [];
-            
-            if (pendingOrders.length > 0) {
-                ordersList.innerHTML = pendingOrders.map(order => `
-                    <div class="list-item">
-                        <div class="list-item-header">
-                            <div class="list-item-title">${order.supplier_name}</div>
-                            <div class="list-item-actions">
-                                <button class="btn btn-success btn-sm" onclick="completePurchaseOrder(${order.id})">
-                                    <i class="fas fa-check"></i> Completar
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="deletePurchaseOrder(${order.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <p class="text-muted">Total: $${order.total}</p>
-                        <div class="order-items">
-                            ${order.items?.map(item => `
-                                <span class="badge badge-secondary">
-                                    ${item.product?.name || 'Producto no encontrado'} x${item.quantity}
-                                </span>
-                            `).join('') || ''}
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                ordersList.innerHTML = '<p class="text-muted text-center">No hay órdenes pendientes</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error cargando órdenes:', error);
-            showToast('error', 'Error', 'No se pudieron cargar las órdenes');
-        });
-}
-
-// Compras completadas
-function loadCompletedPurchases() {
-    fetch('/api/purchases/')
-        .then(response => response.json())
-        .then(data => {
-            const purchasesList = document.getElementById('purchasesList');
-            const completedPurchases = data.purchase_orders?.filter(po => po.status === 'completed') || [];
-            
-            if (completedPurchases.length > 0) {
-                purchasesList.innerHTML = completedPurchases.map(purchase => `
-                    <div class="list-item">
-                        <div class="list-item-header">
-                            <div class="list-item-title">${purchase.supplier_name}</div>
-                            <span class="badge badge-success">Completada</span>
-                        </div>
-                        <p class="text-muted">Total: $${purchase.total}</p>
-                        <p class="text-muted">Completada: ${new Date(purchase.updated_at).toLocaleDateString()}</p>
-                        <div class="purchase-items">
-                            ${purchase.items?.map(item => `
-                                <span class="badge badge-secondary">
-                                    ${item.product?.name || 'Producto no encontrado'} x${item.quantity}
-                                </span>
-                            `).join('') || ''}
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                purchasesList.innerHTML = '<p class="text-muted text-center">No hay compras completadas</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error cargando compras:', error);
-            showToast('error', 'Error', 'No se pudieron cargar las compras');
-        });
-}
-
-// Cargar datos para formularios
-function loadCategoriesForProducts() {
-    fetch('/api/categories/')
-        .then(response => response.json())
-        .then(data => {
-            const categorySelect = document.getElementById('productCategory');
-            if (categorySelect && data.categories) {
-                categorySelect.innerHTML = '<option value="">Seleccionar categoría</option>' +
-                    data.categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
-            }
-        })
-        .catch(error => console.error('Error cargando categorías:', error));
-}
-
-function loadProductsForStock() {
-    fetch('/api/products/')
-        .then(response => response.json())
-        .then(data => {
-            const productSelect = document.getElementById('stockProduct');
-            if (productSelect && data.products) {
-                productSelect.innerHTML = '<option value="">Seleccionar producto</option>' +
-                    data.products.map(prod => `<option value="${prod.id}">${prod.name}</option>`).join('');
-            }
-        })
-        .catch(error => console.error('Error cargando productos:', error));
-}
-
-function loadProductsForOrders() {
-    fetch('/api/products/')
-        .then(response => response.json())
-        .then(data => {
-            const productSelect = document.getElementById('productSelect');
-            if (productSelect && data.products) {
-                productSelect.innerHTML = '<option value="">Seleccionar producto</option>' +
-                    data.products.map(prod => `<option value="${prod.id}">${prod.name}</option>`).join('');
-            }
-        })
-        .catch(error => console.error('Error cargando productos:', error));
-}
-
-// Funciones de formularios
-function submitCategory(event) {
-    event.preventDefault();
-    
-    if (!this.validateForm()) {
-        showToast('error', 'Error de Validación', 'Por favor corrige los errores en el formulario');
+async function submitPurchaseOrder(event) {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        showToast('error', 'Error', 'No estás autenticado');
         return;
     }
-    
-    const formData = new FormData(event.target);
-    const categoryData = {
-        name: formData.get('name'),
-        description: formData.get('description')
-    };
-    
-    fetch('/api/categories/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoryData)
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw new Error('Error al crear categoría');
-    })
-    .then(data => {
-        showToast('success', 'Éxito', 'Categoría creada correctamente');
-        this.resetForm();
-        loadCategories();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('error', 'Error', 'No se pudo crear la categoría');
-    });
-}
 
-function submitProduct(event) {
-    event.preventDefault();
-    
-    if (!this.validateForm()) {
-        showToast('error', 'Error de Validación', 'Por favor corrige los errores en el formulario');
-        return;
-    }
-    
-    const formData = new FormData(event.target);
-    const productData = {
-        name: formData.get('name'),
-        description: formData.get('description'),
-        price: parseFloat(formData.get('price')),
-        category_id: parseInt(formData.get('category_id'))
-    };
-    
-    fetch('/api/products/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(productData)
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw new Error('Error al crear producto');
-    })
-    .then(data => {
-        showToast('success', 'Éxito', 'Producto creado correctamente');
-        this.resetForm();
-        loadProducts();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('error', 'Error', 'No se pudo crear el producto');
-    });
-}
-
-function submitStock(event) {
-    event.preventDefault();
-    
-    if (!this.validateForm()) {
-        showToast('error', 'Error de Validación', 'Por favor corrige los errores en el formulario');
-        return;
-    }
-    
-    const formData = new FormData(event.target);
-    const stockData = {
-        product_id: parseInt(formData.get('product_id')),
-        quantity: parseInt(formData.get('quantity')),
-        min_stock: parseInt(formData.get('min_stock') || 0)
-    };
-    
-    fetch('/api/stock/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(stockData)
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw new Error('Error al crear stock');
-    })
-    .then(data => {
-        showToast('success', 'Éxito', 'Stock creado correctamente');
-        this.resetForm();
-        loadStock();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('error', 'Error', 'No se pudo crear el stock');
-    });
-}
-
-function submitPurchaseOrder(event) {
     event.preventDefault();
     
     if (!this.validateForm()) {
@@ -720,33 +551,32 @@ function submitPurchaseOrder(event) {
         items: purchaseItems
     };
     
-    fetch('/api/purchases/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
+    try {
+        const response = await authManager.authenticatedRequest('/api/purchases/', {
+            method: 'POST',
+            body: JSON.stringify(orderData)
+        });
+        
+        if (response && response.ok) {
+            const data = await response.json();
+            showToast('success', 'Éxito', 'Orden de compra creada correctamente');
+            this.resetForm();
+            purchaseItems = [];
+            updatePurchaseItems();
+            loadPurchaseOrders();
+        } else {
+            throw new Error('Error al crear orden de compra');
         }
-        throw new Error('Error al crear orden de compra');
-    })
-    .then(data => {
-        showToast('success', 'Éxito', 'Orden de compra creada correctamente');
-        this.resetForm();
-        purchaseItems = [];
-        updatePurchaseItems();
-        loadPurchaseOrders();
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error:', error);
         showToast('error', 'Error', 'No se pudo crear la orden de compra');
-    });
+    }
 }
 
-// Funciones de órdenes de compra
+// ========================================
+// FUNCIONES DE ÓRDENES DE COMPRA
+// ========================================
+
 function addPurchaseItem() {
     const productSelect = document.getElementById('productSelect');
     const quantityInput = document.getElementById('quantityInput');
@@ -825,56 +655,70 @@ function updateCreateOrderButton() {
     }
 }
 
-// Funciones de acciones
-function completePurchaseOrder(orderId) {
+// ========================================
+// FUNCIONES DE ACCIONES
+// ========================================
+
+async function completePurchaseOrder(orderId) {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        showToast('error', 'Error', 'No estás autenticado');
+        return;
+    }
+
     if (confirm('¿Estás seguro de que quieres completar esta orden de compra?')) {
-        fetch(`/api/purchases/${orderId}/complete`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
+        try {
+            const response = await authManager.authenticatedRequest(`/api/purchases/${orderId}/complete`, {
+                method: 'PUT'
+            });
+            
+            if (response && response.ok) {
+                const data = await response.json();
+                showToast('success', 'Éxito', 'Orden de compra completada correctamente');
+                loadPurchaseOrders();
+                loadCompletedPurchases();
+                updateDashboard();
+            } else {
+                throw new Error('Error al completar orden');
             }
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            throw new Error('Error al completar orden');
-        })
-        .then(data => {
-            showToast('success', 'Éxito', 'Orden de compra completada correctamente');
-            loadPurchaseOrders();
-            loadCompletedPurchases();
-            updateDashboard();
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             showToast('error', 'Error', 'No se pudo completar la orden');
-        });
+        }
     }
 }
 
-function deletePurchaseOrder(orderId) {
+async function deletePurchaseOrder(orderId) {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        showToast('error', 'Error', 'No estás autenticado');
+        return;
+    }
+
     if (confirm('¿Estás seguro de que quieres eliminar esta orden de compra?')) {
-        fetch(`/api/purchases/${orderId}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
-            if (response.ok) {
+        try {
+            const response = await authManager.authenticatedRequest(`/api/purchases/${orderId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response && response.ok) {
                 showToast('success', 'Éxito', 'Orden de compra eliminada correctamente');
                 loadPurchaseOrders();
                 updateDashboard();
             } else {
                 throw new Error('Error al eliminar orden');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             showToast('error', 'Error', 'No se pudo eliminar la orden');
-        });
+        }
     }
 }
 
-// Funciones de edición (placeholders)
+// ========================================
+// FUNCIONES DE EDICIÓN (PLACEHOLDERS)
+// ========================================
+
 function editCategory(id) {
     if (!checkPermission('edit_category', 'manager')) return;
     showToast('info', 'Función en desarrollo', 'La edición de categorías estará disponible próximamente');
@@ -891,6 +735,12 @@ function editStock(id) {
 }
 
 async function deleteCategory(id) {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        showToast('error', 'Error', 'No estás autenticado');
+        return;
+    }
+
     if (!checkPermission('delete_category', 'admin')) return;
     
     if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
@@ -913,6 +763,12 @@ async function deleteCategory(id) {
 }
 
 async function deleteProduct(id) {
+    // Verificar que authManager esté disponible
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        showToast('error', 'Error', 'No estás autenticado');
+        return;
+    }
+
     if (!checkPermission('delete_product', 'admin')) return;
     
     if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
@@ -933,6 +789,10 @@ async function deleteProduct(id) {
         }
     }
 }
+
+// ========================================
+// FUNCIONES AUXILIARES
+// ========================================
 
 // Filtros y búsqueda
 function filterProducts() {
@@ -964,7 +824,30 @@ function showToast(type, title, message, duration = 5000) {
     alert(`${title}: ${message}`);
 }
 
-// Exportar funciones para uso global
+// Función para mostrar errores de manera consistente
+function showError(error, title = 'Error') {
+    if (window.showError) {
+        window.showError(error, title);
+    } else {
+        console.error(`${title}:`, error);
+        alert(`${title}: ${error.message || error}`);
+    }
+}
+
+// Función para mostrar mensajes de éxito de manera consistente
+function showSuccess(message, title = 'Éxito') {
+    if (window.showSuccess) {
+        window.showSuccess(message, title);
+    } else {
+        console.log(`${title}:`, message);
+        alert(`${title}: ${message}`);
+    }
+}
+
+// ========================================
+// EXPORTACIÓN DE FUNCIONES GLOBALES
+// ========================================
+
 window.showTab = showTab;
 window.addPurchaseItem = addPurchaseItem;
 window.removePurchaseItem = removePurchaseItem;
