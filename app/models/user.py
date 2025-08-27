@@ -121,8 +121,13 @@ class User(db.Model):
     
     def update_last_login(self):
         """Actualiza la fecha del último login"""
-        self.last_login = datetime.utcnow()
-        db.session.commit()
+        try:
+            self.last_login = datetime.utcnow()
+            self.updated_at = datetime.utcnow()
+            db.session.commit()
+        except Exception as e:
+            print(f"Error actualizando last_login: {e}")
+            db.session.rollback()
     
     def to_dict(self):
         """Convierte el usuario a diccionario (sin información sensible)"""
@@ -169,164 +174,37 @@ class User(db.Model):
     @staticmethod
     def get_by_username(username):
         """Obtiene usuario por nombre de usuario"""
-        from flask import current_app
-        
-        # Método 1: Intentar usar SQLAlchemy con current_app
-        if hasattr(current_app, 'extensions') and 'sqlalchemy' in current_app.extensions:
-            try:
-                with current_app.app_context():
-                    return User.query.filter_by(username=username).first()
-            except Exception as e:
-                print(f"Error en get_by_username con current_app: {e}")
-                # Continuar con el siguiente método
-        
-        # Método 2: Intentar usar SQLAlchemy global
         try:
-            return User.query.filter_by(username=username).first()
+            # Usar solo SQLAlchemy estándar
+            return User.query.filter_by(username=username, is_active=True).first()
         except Exception as e:
-            print(f"Error en get_by_username con instancia global: {e}")
-            # Continuar con el siguiente método
-        
-        # Método 3: Fallback a SQL directo
-        try:
-            from sqlite3 import connect
-            from pathlib import Path
-            
-            # Ruta de la base de datos
-            db_path = Path("instance/stock_management.db")
-            if not db_path.exists():
-                print("❌ Base de datos no encontrada para fallback SQL")
-                return None
-            
-            # Conectar y ejecutar SQL directo
-            conn = connect(db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT id, username, email, password_hash, first_name, last_name, 
-                       role, is_active, created_at, updated_at, last_login
-                FROM users 
-                WHERE username = ? AND is_active = 1
-            """, (username,))
-            
-            user_data = cursor.fetchone()
-            conn.close()
-            
-            if user_data:
-                # Crear instancia de usuario con los datos obtenidos
-                user = User.__new__(User)
-                user.id = user_data[0]
-                user.username = user_data[1]
-                user.email = user_data[2]
-                user.password_hash = user_data[3]
-                user.first_name = user_data[4]
-                user.last_name = user_data[5]
-                user.role = user_data[6]
-                user.is_active = bool(user_data[7])
-                user.created_at = user_data[8]
-                user.updated_at = user_data[9]
-                user.last_login = user_data[10]
-                return user
-            
-            return None
-            
-        except Exception as e:
-            print(f"Error en get_by_username con fallback SQL: {e}")
+            print(f"Error en get_by_username: {e}")
             return None
     
     @staticmethod
     def get_by_email(email):
         """Obtiene usuario por email"""
-        from flask import current_app
-        
-        # Método 1: Intentar usar SQLAlchemy con current_app
-        if hasattr(current_app, 'extensions') and 'sqlalchemy' in current_app.extensions:
-            try:
-                with current_app.app_context():
-                    return User.query.filter_by(email=email).first()
-            except Exception as e:
-                print(f"Error en get_by_email con current_app: {e}")
-                # Continuar con el siguiente método
-        
-        # Método 2: Intentar usar SQLAlchemy global
         try:
-            return User.query.filter_by(email=email).first()
+            # Usar solo SQLAlchemy estándar
+            return User.query.filter_by(email=email, is_active=True).first()
         except Exception as e:
-            print(f"Error en get_by_email con instancia global: {e}")
-            # Continuar con el siguiente método
-        
-        # Método 3: Fallback a SQL directo
-        try:
-            from sqlite3 import connect
-            from pathlib import Path
-            
-            # Ruta de la base de datos
-            db_path = Path("instance/stock_management.db")
-            if not db_path.exists():
-                print("❌ Base de datos no encontrada para fallback SQL")
-                return None
-            
-            # Conectar y ejecutar SQL directo
-            conn = connect(db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT id, username, email, password_hash, first_name, last_name, 
-                       role, is_active, created_at, updated_at, last_login
-                FROM users 
-                WHERE email = ? AND is_active = 1
-            """, (email,))
-            
-            user_data = cursor.fetchone()
-            conn.close()
-            
-            if user_data:
-                # Crear instancia de usuario con los datos obtenidos
-                user = User.__new__(User)
-                user.id = user_data[0]
-                user.username = user_data[1]
-                user.email = user_data[2]
-                user.password_hash = user_data[3]
-                user.first_name = user_data[4]
-                user.last_name = user_data[5]
-                user.role = user_data[6]
-                user.is_active = bool(user_data[7])
-                user.created_at = user_data[8]
-                user.updated_at = user_data[9]
-                user.last_login = user_data[10]
-                return user
-            
-            return None
-            
-        except Exception as e:
-            print(f"Error en get_by_email con fallback SQL: {e}")
+            print(f"Error en get_by_email: {e}")
             return None
     
     @staticmethod
     def create_admin_user(username, email, password, first_name, last_name):
         """Crea un usuario administrador"""
-        from flask import current_app
-        
-        # Intentar usar current_app directamente
-        if hasattr(current_app, 'extensions') and 'sqlalchemy' in current_app.extensions:
-            with current_app.app_context():
-                if User.query.filter_by(role='admin').first():
-                    raise ValueError("Ya existe un usuario administrador")
-                
-                user = User(username, email, password, first_name, last_name, 'admin')
-                db.session.add(user)
-                db.session.commit()
-                return user
-        else:
-            # Fallback: intentar usar la instancia global
-            try:
-                if User.query.filter_by(role='admin').first():
-                    raise ValueError("Ya existe un usuario administrador")
-                
-                user = User(username, email, password, first_name, last_name, 'admin')
-                db.session.add(user)
-                db.session.commit()
-                return user
-            except Exception as e:
-                print(f"Error en create_admin_user: {e}")
-                raise e
+        try:
+            # Verificar si ya existe un admin
+            if User.query.filter_by(role='admin').first():
+                raise ValueError("Ya existe un usuario administrador")
+            
+            # Crear nuevo usuario admin
+            user = User(username, email, password, first_name, last_name, 'admin')
+            db.session.add(user)
+            db.session.commit()
+            return user
+        except Exception as e:
+            print(f"Error en create_admin_user: {e}")
+            db.session.rollback()
+            raise e

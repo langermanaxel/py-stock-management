@@ -4,7 +4,13 @@ class JWTAuthManager {
         this.token = localStorage.getItem('jwt_token');
         this.refreshToken = localStorage.getItem('jwt_refresh_token');
         this.user = JSON.parse(localStorage.getItem('user_info') || 'null');
+        
+        // Configuración de URL base
+        // Como Flask sirve tanto el frontend como la API desde el mismo puerto (5000)
+        // siempre usamos rutas relativas
         this.baseURL = '/api';
+        
+        console.log('🔧 Auth Manager inicializado con baseURL:', this.baseURL);
     }
 
     // Verificar si el usuario está autenticado
@@ -68,7 +74,7 @@ class JWTAuthManager {
             const response = await fetch(url, {
                 ...options,
                 headers,
-                credentials: 'same-origin',
+                credentials: 'include', // Cambiar a 'include' para CORS con cookies
                 mode: 'cors'
             });
 
@@ -208,7 +214,7 @@ class JWTAuthManager {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ username, password }),
-                credentials: 'same-origin',
+                credentials: 'include', // Cambiar a 'include' para CORS con cookies
                 mode: 'cors'
             });
 
@@ -267,7 +273,7 @@ class JWTAuthManager {
                 headers: {
                     'Authorization': `Bearer ${this.refreshToken}`
                 },
-                credentials: 'same-origin',
+                credentials: 'include', // Cambiar a 'include' para CORS con cookies
                 mode: 'cors'
             });
 

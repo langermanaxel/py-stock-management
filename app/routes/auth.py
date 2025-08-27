@@ -5,11 +5,14 @@ Rutas de Autenticación para el Sistema de Gestión de Inventario
 
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from app.database import db
 from app.models.user import User
 from functools import wraps
 import os
+import sqlite3
+from pathlib import Path
+from datetime import datetime
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -36,6 +39,85 @@ def get_current_user():
         pass
     return None
 
+def get_user_by_username_direct(username):
+    """Obtiene usuario por username usando SQLite directo"""
+    try:
+        db_path = Path("instance/stock_management.db")
+        if not db_path.exists():
+            return None
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, username, email, password_hash, first_name, last_name, 
+                   role, is_active, created_at, updated_at, last_login
+            FROM users 
+            WHERE username = ? AND is_active = 1
+        """, (username,))
+        
+        user_data = cursor.fetchone()
+        conn.close()
+        
+        if user_data:
+            return {
+                'id': user_data[0],
+                'username': user_data[1],
+                'email': user_data[2],
+                'password_hash': user_data[3],
+                'first_name': user_data[4],
+                'last_name': user_data[5],
+                'role': user_data[6],
+                'is_active': bool(user_data[7]),
+                'created_at': user_data[8],
+                'updated_at': user_data[9],
+                'last_login': user_data[10]
+            }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error en get_user_by_username_direct: {e}")
+        return None
+
+def check_password_direct(password_hash, password):
+    """Verifica contraseña usando werkzeug"""
+    try:
+        return check_password_hash(password_hash, password)
+    except Exception as e:
+        print(f"Error en check_password_direct: {e}")
+        return False
+
+def update_last_login_direct(user_id):
+    """Actualiza last_login usando SQLite directo"""
+    try:
+        db_path = Path("instance/stock_management.db")
+        if not db_path.exists():
+            return False
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        current_time = datetime.now().isoformat()
+        cursor.execute("""
+            UPDATE users 
+            SET last_login = ?, updated_at = ?
+            WHERE id = ?
+        """, (current_time, current_time, user_id))
+        
+        conn.commit()
+        conn.close()
+        return True
+        
+    except Exception as e:
+        print(f"Error en update_last_login_direct: {e}")
+        return False
+
+@auth_bp.route('/test', methods=['GET'])
+def test():
+    """Endpoint de prueba"""
+    return jsonify({'message': 'Auth blueprint funcionando correctamente'}), 200
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """Endpoint de login"""
@@ -48,26 +130,72 @@ def login():
         username = data['username']
         password = data['password']
         
+        # Buscar usuario usando SQLite directo
+        import sqlite3
+        from pathlib import Path
+        from werkzeug.security import check_password_hash
+        from datetime import datetime
+        
+        db_path = Path("instance/stock_management.db")
+        if not db_path.exists():
+            return jsonify({'error': 'Base de datos no encontrada'}), 500
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
         # Buscar usuario
-        user = User.get_by_username(username)
-        if not user or not user.check_password(password):
+        cursor.execute("""
+            SELECT id, username, email, password_hash, first_name, last_name, 
+                   role, is_active, created_at, updated_at, last_login
+            FROM users 
+            WHERE username = ? AND is_active = 1
+        """, (username,))
+        
+        user_data = cursor.fetchone()
+        
+        if not user_data:
+            conn.close()
             return jsonify({'error': 'Credenciales inválidas'}), 401
         
-        if not user.is_active:
+        # Verificar contraseña
+        password_hash = user_data[3]
+        if not check_password_hash(password_hash, password):
+            conn.close()
+            return jsonify({'error': 'Credenciales inválidas'}), 401
+        
+        # Verificar si está activo
+        if not user_data[7]:
+            conn.close()
             return jsonify({'error': 'Usuario desactivado'}), 401
         
         # Actualizar último login
-        user.update_last_login()
+        current_time = datetime.now().isoformat()
+        cursor.execute("""
+            UPDATE users 
+            SET last_login = ?, updated_at = ?
+            WHERE id = ?
+        """, (current_time, current_time, user_data[0]))
+        
+        conn.commit()
+        conn.close()
         
         # Generar tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=str(user_data[0]))
+        refresh_token = create_refresh_token(identity=str(user_data[0]))
         
         return jsonify({
             'message': 'Login exitoso',
             'access_token': access_token,
             'refresh_token': refresh_token,
-            'user': user.to_dict()
+            'user': {
+                'id': user_data[0],
+                'username': user_data[1],
+                'email': user_data[2],
+                'first_name': user_data[4],
+                'last_name': user_data[5],
+                'role': user_data[6],
+                'is_active': bool(user_data[7])
+            }
         }), 200
         
     except Exception as e:

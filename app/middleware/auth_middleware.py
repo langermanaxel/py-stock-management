@@ -7,7 +7,49 @@ Protege todas las rutas que requieren autenticación
 from functools import wraps
 from flask import request, jsonify, current_app
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-from app.models.user import User
+import sqlite3
+from pathlib import Path
+
+def get_user_by_id_direct(user_id):
+    """Obtiene usuario por ID usando SQLite directo"""
+    try:
+        db_path = Path("instance/stock_management.db")
+        if not db_path.exists():
+            return None
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, username, email, password_hash, first_name, last_name, 
+                   role, is_active, created_at, updated_at, last_login
+            FROM users 
+            WHERE id = ? AND is_active = 1
+        """, (user_id,))
+        
+        user_data = cursor.fetchone()
+        conn.close()
+        
+        if user_data:
+            return {
+                'id': user_data[0],
+                'username': user_data[1],
+                'email': user_data[2],
+                'password_hash': user_data[3],
+                'first_name': user_data[4],
+                'last_name': user_data[5],
+                'role': user_data[6],
+                'is_active': bool(user_data[7]),
+                'created_at': user_data[8],
+                'updated_at': user_data[9],
+                'last_login': user_data[10]
+            }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error en get_user_by_id_direct: {e}")
+        return None
 
 def require_auth(f):
     """Decorador para requerir autenticación"""
@@ -16,9 +58,9 @@ def require_auth(f):
         try:
             verify_jwt_in_request()
             current_user_id = get_jwt_identity()
-            current_user = User.query.get(current_user_id)
+            current_user = get_user_by_id_direct(current_user_id)
             
-            if not current_user or not current_user.is_active:
+            if not current_user or not current_user['is_active']:
                 return jsonify({'error': 'Usuario no válido o inactivo'}), 401
             
             # Agregar usuario actual al contexto de la request
@@ -39,13 +81,22 @@ def require_permission(permission):
             try:
                 verify_jwt_in_request()
                 current_user_id = get_jwt_identity()
-                current_user = User.query.get(current_user_id)
+                current_user = get_user_by_id_direct(current_user_id)
                 
-                if not current_user or not current_user.is_active:
+                if not current_user or not current_user['is_active']:
                     return jsonify({'error': 'Usuario no válido o inactivo'}), 401
                 
-                if not current_user.has_permission(permission):
-                    return jsonify({'error': 'Permiso denegado'}), 403
+                # Verificar permisos basados en rol
+                user_role = current_user['role']
+                
+                if permission == 'admin' and user_role != 'admin':
+                    return jsonify({'error': 'Se requiere rol de administrador'}), 403
+                elif permission == 'gerente' and user_role not in ['admin', 'gerente']:
+                    return jsonify({'error': 'Se requiere rol de gerente o superior'}), 403
+                elif permission == 'usuario' and user_role not in ['admin', 'gerente', 'usuario']:
+                    return jsonify({'error': 'Se requiere rol de usuario o superior'}), 403
+                elif permission == 'viewer' and user_role not in ['admin', 'gerente', 'usuario', 'viewer']:
+                    return jsonify({'error': 'Se requiere rol de viewer o superior'}), 403
                 
                 request.current_user = current_user
                 return f(*args, **kwargs)
@@ -63,12 +114,12 @@ def require_role(role):
             try:
                 verify_jwt_in_request()
                 current_user_id = get_jwt_identity()
-                current_user = User.query.get(current_user_id)
+                current_user = get_user_by_id_direct(current_user_id)
                 
-                if not current_user or not current_user.is_active:
+                if not current_user or not current_user['is_active']:
                     return jsonify({'error': 'Usuario no válido o inactivo'}), 401
                 
-                if current_user.role != role and not current_user.is_admin():
+                if current_user['role'] != role and current_user['role'] != 'admin':
                     return jsonify({'error': 'Rol requerido no autorizado'}), 403
                 
                 request.current_user = current_user
@@ -83,28 +134,61 @@ def require_admin(f):
     """Decorador para requerir rol de administrador"""
     return require_role('admin')(f)
 
-def require_manager(f):
+def require_gerente(f):
     """Decorador para requerir rol de gerente o superior"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        try:
-            verify_jwt_in_request()
-            current_user_id = get_jwt_identity()
-            current_user = User.query.get(current_user_id)
-            
-            if not current_user or not current_user.is_active:
-                return jsonify({'error': 'Usuario no válido o inactivo'}), 401
-            
-            if not current_user.is_manager():
-                return jsonify({'error': 'Se requiere rol de gerente o superior'}), 403
-            
-            request.current_user = current_user
-            return f(*args, **kwargs)
-        except Exception as e:
-            current_app.logger.warning(f"Verificación de gerente fallida: {str(e)}")
-            return jsonify({'error': 'Autenticación requerida'}), 401
+    return require_permission('gerente')(f)
+
+def require_usuario(f):
+    """Decorador para requerir rol de usuario o superior"""
+    return require_permission('usuario')(f)
+
+def require_viewer(f):
+    """Decorador para requerir rol de viewer o superior"""
+    return require_permission('viewer')(f)
+
+def can_access_endpoint(endpoint, user_role):
+    """Verifica si un usuario puede acceder a un endpoint específico"""
+    # Mapeo de endpoints a roles mínimos requeridos
+    endpoint_permissions = {
+        # Endpoints de administración (solo admin)
+        '/api/users/': 'admin',
+        '/api/system/': 'admin',
+        '/api/backup/': 'admin',
+        
+        # Endpoints de gestión (admin y gerente)
+        '/api/products/': 'gerente',
+        '/api/categories/': 'gerente',
+        '/api/stock/': 'gerente',
+        '/api/orders/': 'gerente',
+        '/api/purchases/': 'gerente',
+        
+        # Endpoints de usuario (admin, gerente, usuario)
+        '/api/profile/': 'usuario',
+        '/api/reports/': 'usuario',
+        
+        # Endpoints de visualización (todos los roles)
+        '/api/dashboard/': 'viewer',
+        '/api/analytics/': 'viewer'
+    }
     
-    return decorated_function
+    # Buscar el permiso más restrictivo para el endpoint
+    for path, required_role in endpoint_permissions.items():
+        if endpoint.startswith(path):
+            # Verificar jerarquía de roles
+            role_hierarchy = {
+                'viewer': 1,
+                'usuario': 2,
+                'gerente': 3,
+                'admin': 4
+            }
+            
+            user_level = role_hierarchy.get(user_role, 0)
+            required_level = role_hierarchy.get(required_role, 0)
+            
+            return user_level >= required_level
+    
+    # Por defecto, permitir acceso a usuarios autenticados
+    return True
 
 def log_user_action(action):
     """Decorador para registrar acciones de usuario"""
@@ -135,3 +219,36 @@ def is_authenticated():
         return True
     except:
         return False
+
+def require_auth_smart(f):
+    """Decorador inteligente que verifica permisos automáticamente basado en la ruta"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            verify_jwt_in_request()
+            current_user_id = get_jwt_identity()
+            current_user = get_user_by_id_direct(current_user_id)
+            
+            if not current_user or not current_user['is_active']:
+                return jsonify({'error': 'Usuario no válido o inactivo'}), 401
+            
+            # Verificar permisos basados en la ruta actual
+            current_endpoint = request.path
+            user_role = current_user['role']
+            
+            if not can_access_endpoint(current_endpoint, user_role):
+                return jsonify({
+                    'error': f'Acceso denegado. Se requiere rol superior a {user_role}',
+                    'required_permission': 'Rol superior',
+                    'current_role': user_role
+                }), 403
+            
+            # Agregar usuario actual al contexto de la request
+            request.current_user = current_user
+            
+            return f(*args, **kwargs)
+        except Exception as e:
+            current_app.logger.warning(f"Autenticación inteligente fallida: {str(e)}")
+            return jsonify({'error': 'Token de autenticación requerido'}), 401
+    
+    return decorated_function

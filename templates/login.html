@@ -3,371 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema de Gestión de Inventario</title>
+    <title>Stock Management - Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-        }
-        
-        .login-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        
-        .login-header {
-            margin-bottom: 30px;
-        }
-        
-        .login-header h1 {
-            color: #333;
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-        
-        .login-header p {
-            color: #666;
-            font-size: 1rem;
-        }
-        
-        .login-form {
-            text-align: left;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-            box-sizing: border-box;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .login-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .login-btn:active {
-            transform: translateY(0);
-        }
-        
-        .demo-credentials {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .demo-credentials h4 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-        }
-        
-        .demo-credentials p {
-            color: #666;
-            font-size: 0.8rem;
-            margin: 5px 0;
-        }
-        
-        .flash-messages {
-            margin-bottom: 20px;
-        }
-        
-        .flash-message {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-        
-        .flash-error {
-            background: #fee;
-            color: #c53030;
-            border: 1px solid #fed7d7;
-        }
-        
-        .flash-success {
-            background: #f0fff4;
-            color: #38a169;
-            border: 1px solid #c6f6d5;
-        }
-        
-        .flash-info {
-            background: #ebf8ff;
-            color: #3182ce;
-            border: 1px solid #bee3f8;
-        }
-        
-        .forgot-password {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .forgot-password a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        
-        .forgot-password a:hover {
-            text-decoration: underline;
-        }
-        
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 30px 20px;
-                margin: 10px;
-            }
-            
-            .login-header h1 {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <h1><i class="fas fa-boxes"></i> Sistema de Inventario</h1>
-                <p>Inicia sesión para continuar</p>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+        <!-- Header -->
+        <div class="text-center">
+            <div class="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
+                <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
             </div>
-            
-            <!-- Mensajes Flash -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="flash-messages">
-                        {% for category, message in messages %}
-                            <div class="flash-message flash-{{ category }}">
-                                {% if category == 'error' %}
-                                    <i class="fas fa-exclamation-circle"></i>
-                                {% elif category == 'success' %}
-                                    <i class="fas fa-check-circle"></i>
-                                {% else %}
-                                    <i class="fas fa-info-circle"></i>
-                                {% endif %}
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-            
-            <form id="loginForm" class="login-form">
-                <div class="form-group">
-                    <label for="username">
-                        <i class="fas fa-user"></i> Usuario
-                    </label>
-                    <input type="text" 
-                           id="username" 
-                           name="username" 
-                           required 
-                           placeholder="Ingresa tu nombre de usuario"
-                           autocomplete="username">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">
-                        <i class="fas fa-lock"></i> Contraseña
-                    </label>
-                    <input type="password" 
-                           id="password" 
-                           name="password" 
-                           required 
-                           placeholder="Ingresa tu contraseña"
-                           autocomplete="current-password">
-                </div>
-                
-                <button type="submit" class="login-btn">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                </button>
-            </form>
-            
-            <!-- Credenciales de Demo -->
-            <div class="demo-credentials">
-                <h4><i class="fas fa-info-circle"></i> Credenciales de Demo</h4>
-                <p><strong>Admin:</strong> admin / Admin123!</p>
-                <p><strong>Gerente:</strong> gerente / Gerente123!</p>
-                <p><strong>Usuario:</strong> usuario / Usuario123!</p>
-                <p><strong>Viewer:</strong> viewer / Viewer123!</p>
-            </div>
-            
-            <div class="forgot-password">
-                <a href="#"><i class="fas fa-question-circle"></i> ¿Olvidaste tu contraseña?</a>
-            </div>
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Stock Management
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Sistema de Gestión de Inventario
+            </p>
         </div>
+
+        <!-- Login Form -->
+        <form class="mt-8 space-y-6" x-data="loginForm()" @submit.prevent="handleLogin">
+            <!-- Alert Messages -->
+            <div x-show="alert.show" 
+                 x-transition
+                 :class="alert.type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'"
+                 class="p-4 border rounded-md">
+                <span x-text="alert.message"></span>
+            </div>
+
+            <!-- Username Field -->
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">
+                    Usuario
+                </label>
+                <div class="mt-1">
+                    <input id="username" 
+                           name="username" 
+                           type="text" 
+                           required 
+                           x-model="form.username"
+                           class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Ingresa tu usuario">
+                </div>
+            </div>
+
+            <!-- Password Field -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">
+                    Contraseña
+                </label>
+                <div class="mt-1">
+                    <input id="password" 
+                           name="password" 
+                           type="password" 
+                           required 
+                           x-model="form.password"
+                           class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Ingresa tu contraseña">
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div>
+                <button type="submit" 
+                        :disabled="loading"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!loading">Iniciar Sesión</span>
+                    <span x-show="loading" class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Iniciando...
+                    </span>
+                </button>
+            </div>
+
+            <!-- Demo Credentials -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-md">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Credenciales Demo:</h3>
+                <div class="space-y-1 text-xs text-gray-600">
+                    <div><strong>Admin:</strong> admin / Admin123!</div>
+                    <div><strong>Gerente:</strong> gerente / Gerente123!</div>
+                    <div><strong>Usuario:</strong> usuario / Usuario123!</div>
+                    <div><strong>Viewer:</strong> viewer / Viewer123!</div>
+                </div>
+            </div>
+        </form>
     </div>
-    
-    <!-- Incluir configuración y sistema de autenticación JWT -->
-    <!-- 1. Configuración (debe cargarse primero) -->
-    <script defer src="{{ url_for('static', filename='js/config.js') }}"></script>
-    
-    <!-- 2. Sistema de autenticación JWT -->
-    <script defer src="{{ url_for('static', filename='js/auth.js') }}"></script>
-    
-    <!-- 3. Helper HTTP -->
-    <script defer src="{{ url_for('static', filename='js/http-helper.js') }}"></script>
-    
-    <!-- 4. Utilidades de página y guardias -->
-    <script defer src="{{ url_for('static', filename='js/page-utils.js') }}"></script>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/http-helper.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     
     <script>
-        // Inicialización segura con guardias por página
-        document.addEventListener('DOMContentLoaded', function() {
-            const guard = new DOMGuard();
-            
-            // Solo ejecutar en la página de login
-            guard.executeOnLogin(() => {
-                initializeLoginPage();
-            });
-        });
-        
-        // Inicialización de la página de login
-        function initializeLoginPage() {
-            const guard = new DOMGuard();
-            
-            // Auto-focus en el primer campo (de forma segura)
-            guard.safeExecute('#username', (usernameField) => {
-                usernameField.focus();
-            });
-            
-            // Manejo del formulario de login con JWT (de forma segura)
-            guard.safeAddEventListener('#loginForm', 'submit', async function(e) {
-                e.preventDefault();
+        function loginForm() {
+            return {
+                form: {
+                    username: '',
+                    password: ''
+                },
+                loading: false,
+                alert: {
+                    show: false,
+                    type: 'error',
+                    message: ''
+                },
                 
-                const username = document.getElementById('username').value.trim();
-                const password = document.getElementById('password').value.trim();
-                
-                if (!username || !password) {
-                    showToast('error', 'Error', 'Por favor completa todos los campos');
-                    return false;
-                }
-                
-                // Mostrar indicador de carga (de forma segura)
-                guard.safeExecute('.login-btn', (btn) => {
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
-                    btn.disabled = true;
+                showAlert(type, message) {
+                    this.alert.type = type;
+                    this.alert.message = message;
+                    this.alert.show = true;
                     
-                    // Procesar login
-                    processLogin(username, password, btn, originalText);
-                });
-            });
-            
-            // Limpiar mensajes flash después de 5 segundos
-            setTimeout(function() {
-                guard.safeExecute('.flash-messages', (container) => {
-                    const flashMessages = container.querySelectorAll('.flash-message');
-                    flashMessages.forEach(function(msg) {
-                        msg.style.opacity = '0';
-                        msg.style.transition = 'opacity 0.5s ease';
-                        setTimeout(function() {
-                            msg.remove();
-                        }, 500);
-                    });
-                });
-            }, 5000);
-        }
-        
-        // Procesar el login de forma segura
-        async function processLogin(username, password, btn, originalText) {
-            try {
-                // Intentar login con JWT
-                const result = await authManager.login(username, password);
-                
-                if (result.success) {
-                    showToast('success', 'Éxito', `¡Bienvenido, ${result.user.first_name}!`);
-                    
-                    // Redirigir al dashboard después de un breve delay
                     setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1000);
-                } else {
-                    showToast('error', 'Error', result.error || 'Error en el login');
-                    resetLoginButton(btn, originalText);
-                }
-            } catch (error) {
-                showToast('error', 'Error', 'Error de conexión. Intenta nuevamente.');
-                resetLoginButton(btn, originalText);
-            }
-        }
-        
-        // Resetear botón de login
-        function resetLoginButton(btn, originalText) {
-            if (btn) {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-        
-        // Función simple para mostrar toasts (fallback)
-        function showToast(type, title, message) {
-            const guard = new DOMGuard();
-            
-            // Solo ejecutar en la página de login
-            guard.executeOnLogin(() => {
-                // Crear un toast simple si no hay sistema de toasts
-                guard.safeExecute('.flash-messages', (container) => {
-                    const toast = document.createElement('div');
-                    toast.className = `flash-message flash-${type}`;
-                    toast.innerHTML = `
-                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                        <strong>${title}:</strong> ${message}
-                    `;
-                    
-                    container.appendChild(toast);
-                    
-                    // Remover después de 5 segundos
-                    setTimeout(() => {
-                        toast.remove();
+                        this.alert.show = false;
                     }, 5000);
-                });
-            });
+                },
+                
+                async handleLogin() {
+                    this.loading = true;
+                    
+                    try {
+                        const response = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(this.form)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // Guardar token y datos del usuario
+                            localStorage.setItem('access_token', data.access_token);
+                            localStorage.setItem('refresh_token', data.refresh_token);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            
+                            this.showAlert('success', 'Login exitoso! Redirigiendo...');
+                            
+                            // Redirigir al dashboard
+                            setTimeout(() => {
+                                window.location.href = '/dashboard';
+                            }, 1000);
+                        } else {
+                            this.showAlert('error', data.message || 'Error en el login');
+                        }
+                    } catch (error) {
+                        this.showAlert('error', 'Error de conexión. Intenta nuevamente.');
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }
         }
     </script>
 </body>

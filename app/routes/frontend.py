@@ -1,59 +1,77 @@
 #!/usr/bin/env python3
 """
-Rutas del Frontend con Autenticación Básica
+Rutas del Frontend para el Sistema de Gestión de Inventario
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, session
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from functools import wraps
-from app.models.user import User
-from werkzeug.security import check_password_hash
-import os
 
 frontend_bp = Blueprint('frontend', __name__)
 
-# Configuración de sesión
-frontend_bp.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
-
 def login_required(f):
-    """Decorador para requerir autenticación en rutas del frontend"""
+    """Decorador para verificar si el usuario está logueado"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash('Debes iniciar sesión para acceder a esta página', 'error')
-            return redirect(url_for('frontend.login'))
+        # Verificar si hay token en localStorage (esto se hace en el frontend)
+        # Por ahora solo renderizamos la página y el frontend se encarga de la validación
         return f(*args, **kwargs)
     return decorated_function
 
 @frontend_bp.route('/')
 def index():
-    """Página principal - la autenticación se maneja en el frontend con JWT"""
-    return render_template('index.html')
-
-@frontend_bp.route('/login', methods=['GET'])
-def login():
-    """Página de login - la autenticación se maneja en el frontend con JWT"""
-    return render_template('login.html')
-
-@frontend_bp.route('/logout')
-def logout():
-    """Cerrar sesión - se maneja en el frontend con JWT"""
+    """Página principal - redirige al login"""
     return redirect(url_for('frontend.login'))
 
+@frontend_bp.route('/login')
+def login():
+    """Página de login"""
+    return render_template('login.html')
+
+@frontend_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Dashboard principal - requiere autenticación"""
+    return render_template('dashboard.html')
+
+@frontend_bp.route('/products')
+@login_required
+def products():
+    """Página de productos"""
+    return render_template('products.html')
+
+@frontend_bp.route('/stock')
+@login_required
+def stock():
+    """Página de stock"""
+    return render_template('stock.html')
+
+@frontend_bp.route('/categories')
+@login_required
+def categories():
+    """Página de categorías"""
+    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+
+@frontend_bp.route('/orders')
+@login_required
+def orders():
+    """Página de órdenes"""
+    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+
+@frontend_bp.route('/purchases')
+@login_required
+def purchases():
+    """Página de compras"""
+    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+
+@frontend_bp.route('/users')
+@login_required
+def users():
+    """Página de usuarios"""
+    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+
 @frontend_bp.route('/profile')
+@login_required
 def profile():
-    """Página de perfil del usuario - se maneja en el frontend con JWT"""
-    return render_template('profile.html')
-
-@frontend_bp.route('/change-password', methods=['GET'])
-def change_password():
-    """Cambiar contraseña - se maneja en el frontend con JWT"""
-    return render_template('change_password.html')
-
-# Función helper para obtener usuario actual en templates
-@frontend_bp.context_processor
-def inject_user():
-    """Inyecta el usuario actual en todos los templates"""
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
-        return {'current_user': user}
-    return {'current_user': None} 
+    """Página de perfil del usuario"""
+    return render_template('dashboard.html')  # Por ahora redirige al dashboard 

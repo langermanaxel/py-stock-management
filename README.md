@@ -670,7 +670,64 @@ Este proyecto está bajo la **Licencia MIT**. Ver el archivo `LICENSE` para más
 
 ## 🆘 Soporte y Ayuda
 
-### 🔍 ¿Necesitas ayuda?
+### 🔧 Solución de Problemas Comunes
+
+#### ❌ **Problema: Spinner infinito en login (puerto 8080)**
+**Síntomas:** El spinner de login se queda "pensando" sin redirigir
+**Causa:** Problema de CORS entre puertos diferentes (frontend en 8080, backend en 5000)
+
+**Solución rápida:**
+```bash
+# 1. Ejecutar el configurador automático
+python setup_cors.py
+
+# 2. Iniciar el backend (puerto 5000)
+python start_backend.py
+
+# 3. Probar la API
+python test_api_cors.py
+```
+
+**Solución manual:**
+1. Crear archivo `.env` con:
+   ```
+   CORS_ORIGINS=http://localhost:5000,http://127.0.0.1:5000,http://localhost:8080,http://127.0.0.1:8080
+   CORS_SUPPORTS_CREDENTIALS=True
+   ```
+2. **IMPORTANTE:** El backend debe ejecutarse en puerto 5000, no en 8080
+3. Reiniciar el backend: `python run.py` (puerto 5000)
+4. Verificar que el frontend use `credentials: 'include'`
+
+**⚠️ NOTA CRÍTICA:** 
+- Backend: Puerto 5000 (http://127.0.0.1:5000)
+- Frontend: Puerto 8080 (http://localhost:8080)
+- El archivo `run.py` debe tener `port=5000`, NO `port=8080`
+
+#### ❌ **Problema: Error "Subject must be a string" en JWT**
+**Síntomas:** Error 500 en login, spinner infinito
+**Causa:** JWT recibe ID numérico en lugar de string
+**Estado:** ✅ **SOLUCIONADO** en `app/routes/auth.py`
+
+#### ❌ **Problema: Cookies de sesión no se establecen**
+**Síntomas:** Usuario se desloguea al recargar la página
+**Causa:** CORS no permite credenciales o configuración incorrecta
+**Solución:** Verificar `supports_credentials=True` en CORS
+
+#### ❌ **Problema: Frontend no puede conectar al backend**
+**Síntomas:** Errores de red en consola del navegador
+**Causa:** URL incorrecta o puerto diferente
+**Solución:** Frontend detecta automáticamente puerto 8080 y usa 127.0.0.1:5000
+
+### 🧪 **Diagnóstico Automático**
+```bash
+# Probar API y CORS
+python test_api_cors.py
+
+# Configurar entorno automáticamente
+python setup_cors.py
+```
+
+### �� ¿Necesitas ayuda?
 1. 📖 Revisa esta documentación
 2. 🔍 Busca en [issues existentes](../../issues)
 3. ❓ Crea un [nuevo issue](../../issues/new) con detalles

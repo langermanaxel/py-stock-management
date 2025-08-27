@@ -9,9 +9,11 @@ class Config:
     
     # Configuración de la base de datos
     # Prioriza DATABASE_URL del entorno, si no usa SQLite por defecto
-    basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    # Usar ruta absoluta correcta para la base de datos
+    basedir = os.path.abspath(os.getcwd())
     database_path = os.path.join(basedir, 'instance', 'stock_management.db')
     
+    # Usar ruta absoluta para evitar problemas de rutas relativas
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{database_path}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
