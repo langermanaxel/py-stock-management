@@ -252,6 +252,7 @@ Si tienes preguntas o necesitas ayuda:
     from .api.orders import orders_blp
     from .api.purchases import purchases_blp
     from .api.auth import auth_blp
+    from .api.users import users_blp
     
     # Registrar blueprints de la API
     api.register_blueprint(categories_blp)
@@ -260,3 +261,4 @@ Si tienes preguntas o necesitas ayuda:
     api.register_blueprint(orders_blp)
     api.register_blueprint(purchases_blp)
     api.register_blueprint(auth_blp)
+    api.register_blueprint(users_blp)

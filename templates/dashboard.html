@@ -6,8 +6,10 @@
     <title>Stock Management - Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/mobile-menu.js') }}" defer></script>
 </head>
-<body class="bg-gray-100" x-data="dashboardApp()">
+<body class="bg-gray-100" x-data="dashboardApp()" x-init="initTheme()">
     <!-- Navigation Bar -->
     <nav class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,9 +41,25 @@
                     </template>
                 </div>
 
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="mobile-menu-button">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
                 <!-- User Menu -->
-                <div class="flex items-center">
-                    <div class="ml-3 relative" x-data="{ open: false }">
+                <div class="flex items-center space-x-2">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="theme-toggle">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="relative" x-data="{ open: false }">
                         <div>
                             <button @click="open = !open" 
                                     class="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -79,6 +97,31 @@
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay hidden"></div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu">
+        <div class="mobile-menu-header">
+            <h3 class="text-lg font-semibold text-gray-900">Menú</h3>
+            <button class="mobile-menu-close" onclick="mobileMenuManager.closeMobileMenu()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <template x-for="item in navigationItems" :key="item.name">
+                <a :href="item.href" 
+                   :class="item.visible ? 'mobile-menu-item' : 'mobile-menu-item disabled'"
+                   x-show="item.visible"
+                   @click="item.visible ? null : $event.preventDefault()">
+                    <span x-text="item.name"></span>
+                </a>
+            </template>
+        </nav>
+    </div>
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -214,6 +257,15 @@
             return {
                 user: {},
                 showProfile: false,
+                
+                // Theme management
+                initTheme() {
+                    // Initialize theme from localStorage
+                    const savedTheme = localStorage.getItem('theme') || 'light';
+                    if (savedTheme === 'dark') {
+                        document.body.classList.add('dark-mode');
+                    }
+                },
                 
                 // Navigation items based on user role
                 get navigationItems() {

@@ -1,20 +1,38 @@
 from flask import Blueprint, jsonify, request
 from ..models.category import Category
+from ..models.product import Product
 from ..database import db
+from ..decorators.role_decorators import roles_required
 
 categories_bp = Blueprint('categories', __name__)
 
 @categories_bp.route('/', methods=['GET'])
+@roles_required('admin', 'manager', 'supervisor', 'user')
 def get_categories():
     categories = Category.query.order_by(Category.id.asc()).all()
-    return jsonify([category.to_dict() for category in categories])
+    categories_with_count = []
+    
+    for category in categories:
+        category_data = category.to_dict()
+        # Contar productos en esta categoría
+        product_count = Product.query.filter_by(category_id=category.id).count()
+        category_data['product_count'] = product_count
+        categories_with_count.append(category_data)
+    
+    return jsonify(categories_with_count)
 
 @categories_bp.route('/<int:id>', methods=['GET'])
+@roles_required('admin', 'manager', 'supervisor', 'user')
 def get_category(id):
     category = Category.query.get_or_404(id)
-    return jsonify(category.to_dict())
+    category_data = category.to_dict()
+    # Contar productos en esta categoría
+    product_count = Product.query.filter_by(category_id=category.id).count()
+    category_data['product_count'] = product_count
+    return jsonify(category_data)
 
 @categories_bp.route('/', methods=['POST'])
+@roles_required('admin', 'manager')
 def create_category():
     data = request.get_json()
     
@@ -33,6 +51,7 @@ def create_category():
     return jsonify(category.to_dict()), 201
 
 @categories_bp.route('/<int:id>', methods=['PUT'])
+@roles_required('admin', 'manager')
 def update_category(id):
     category = Category.query.get_or_404(id)
     data = request.get_json()
@@ -51,6 +70,7 @@ def update_category(id):
     return jsonify(category.to_dict())
 
 @categories_bp.route('/<int:id>', methods=['DELETE'])
+@roles_required('admin')
 def delete_category(id):
     category = Category.query.get_or_404(id)
     
@@ -64,6 +84,7 @@ def delete_category(id):
     return jsonify({'message': 'Categoría eliminada exitosamente'})
 
 @categories_bp.route('/<int:id>/products', methods=['GET'])
+@roles_required('admin', 'manager', 'supervisor', 'user')
 def get_products_by_category(id):
     category = Category.query.get_or_404(id)
     products = category.products

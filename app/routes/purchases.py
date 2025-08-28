@@ -2,20 +2,24 @@ from flask import Blueprint, request, jsonify
 from ..models.purchase_order import PurchaseOrder, PurchaseOrderItem
 from ..models.stock import Stock
 from ..database import db
+from ..decorators.role_decorators import roles_required
 
 purchases_bp = Blueprint('purchases', __name__)
 
 @purchases_bp.route('/', methods=['GET'])
+@roles_required('admin', 'manager', 'supervisor')
 def get_purchases():
     purchases = PurchaseOrder.query.order_by(PurchaseOrder.id.asc()).all()
     return jsonify([purchase.to_dict() for purchase in purchases])
 
 @purchases_bp.route('/<int:id>', methods=['GET'])
+@roles_required('admin', 'manager', 'supervisor')
 def get_purchase(id):
     purchase = PurchaseOrder.query.get_or_404(id)
     return jsonify(purchase.to_dict())
 
 @purchases_bp.route('/', methods=['POST'])
+@roles_required('admin', 'manager')
 def create_purchase_order():
     data = request.get_json()
     
@@ -37,6 +41,7 @@ def create_purchase_order():
     return jsonify(purchase.to_dict()), 201
 
 @purchases_bp.route('/<int:id>', methods=['PUT'])
+@roles_required('admin', 'manager')
 def update_purchase_order(id):
     purchase = PurchaseOrder.query.get_or_404(id)
     data = request.get_json()
@@ -48,6 +53,7 @@ def update_purchase_order(id):
     return jsonify(purchase.to_dict())
 
 @purchases_bp.route('/<int:id>', methods=['DELETE'])
+@roles_required('admin')
 def delete_purchase_order(id):
     purchase = PurchaseOrder.query.get_or_404(id)
     
@@ -56,11 +62,13 @@ def delete_purchase_order(id):
         return jsonify({'error': 'Solo se pueden eliminar órdenes de compra pendientes'}), 400
     
     db.session.delete(purchase)
+    
     db.session.commit()
     
     return jsonify({'message': 'Orden de compra eliminada exitosamente'})
 
 @purchases_bp.route('/<int:id>/complete', methods=['PUT'])
+@roles_required('admin', 'manager')
 def complete_purchase_order(id):
     purchase = PurchaseOrder.query.get_or_404(id)
     if purchase.status != 'pending':

@@ -50,7 +50,7 @@ def stock():
 @login_required
 def categories():
     """Página de categorías"""
-    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+    return render_template('categories.html')
 
 @frontend_bp.route('/orders')
 @login_required
@@ -62,13 +62,13 @@ def orders():
 @login_required
 def purchases():
     """Página de compras"""
-    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+    return render_template('purchases.html')
 
 @frontend_bp.route('/users')
 @login_required
 def users():
     """Página de usuarios"""
-    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+    return render_template('users.html')
 
 @frontend_bp.route('/profile')
 @login_required

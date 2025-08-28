@@ -53,13 +53,13 @@ const APP_CONFIG = {
             level: 3,
             permissions: ['read', 'create', 'update']
         },
-        user: {
-            name: 'Usuario',
+        supervisor: {
+            name: 'Supervisor',
             level: 2,
             permissions: ['read', 'create_orders']
         },
-        viewer: {
-            name: 'Viewer',
+        user: {
+            name: 'Usuario',
             level: 1,
             permissions: ['read_limited']
         }
@@ -109,6 +109,12 @@ function getRoleInfo(role) {
     return APP_CONFIG.ROLES[role] || null;
 }
 
+// Función para obtener el nombre de visualización de un rol
+function getRoleDisplayName(role) {
+    const roleInfo = getRoleInfo(role);
+    return roleInfo ? roleInfo.name : role;
+}
+
 // Función para verificar si un rol tiene un permiso específico
 function hasRolePermission(role, permission) {
     const roleInfo = getRoleInfo(role);
@@ -133,6 +139,7 @@ function isRoleSuperiorOrEqual(role1, role2) {
 window.APP_CONFIG = APP_CONFIG;
 window.getDemoCredentials = getDemoCredentials;
 window.getRoleInfo = getRoleInfo;
+window.getRoleDisplayName = getRoleDisplayName;
 window.hasRolePermission = hasRolePermission;
 window.getRoleLevel = getRoleLevel;
 window.isRoleSuperiorOrEqual = isRoleSuperiorOrEqual;
