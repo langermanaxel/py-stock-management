@@ -6,6 +6,7 @@ Endpoints de Órdenes con flask-smorest
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime, timezone
 from app.database import db
 from app.models.order import Order
 from app.schemas.order import OrderSchema, OrderCreateSchema, OrderUpdateSchema, OrderListSchema
@@ -58,6 +59,9 @@ class Orders(MethodView):
             # Crear la orden
             order = Order(
                 customer_name=order_data["customer_name"],
+                customer_email=order_data.get("customer_email", ""),
+                customer_phone=order_data.get("customer_phone", ""),
+                notes=order_data.get("notes", ""),
                 total=total,
                 status='pending'
             )
@@ -183,11 +187,12 @@ class CompleteOrder(MethodView):
                     stock.quantity -= item.quantity
                     if stock.quantity < 0:
                         raise ValidationError(f"Stock insuficiente para completar la orden")
-                    stock.updated_at = db.func.now()
+                    stock.updated_at = datetime.now(timezone.utc)
             
             # Marcar orden como completada
             order.status = 'completed'
-            order.updated_at = db.func.now()
+            order.updated_at = datetime.now(timezone.utc)
+            order.completed_at = datetime.now(timezone.utc)
             
             db.session.commit()
             return order

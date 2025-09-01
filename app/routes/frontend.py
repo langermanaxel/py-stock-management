@@ -56,7 +56,7 @@ def categories():
 @login_required
 def orders():
     """Página de órdenes"""
-    return render_template('dashboard.html')  # Por ahora redirige al dashboard
+    return render_template('orders.html')
 
 @frontend_bp.route('/purchases')
 @login_required

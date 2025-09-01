@@ -30,31 +30,13 @@
 
                 <!-- Navigation Menu -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="/dashboard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        Dashboard
-                    </a>
-                    <a href="/products" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        Productos
-                    </a>
-                    <a href="/stock" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        Stock
-                    </a>
-                    <a href="/categories" class="text-blue-600 bg-blue-50 px-3 py-2 rounded-md text-sm font-medium">
-                        Categorías
-                    </a>
-                    <template x-if="canAccessOrders">
-                        <a href="/orders" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                            Órdenes
-                        </a>
-                    </template>
-                    <template x-if="canAccessPurchases">
-                        <a href="/purchases" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                            Compras
-                        </a>
-                    </template>
-                    <template x-if="canAccessUsers">
-                        <a href="/users" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                            Usuarios
+                    <template x-for="item in navigationItems" :key="item.name">
+                        <a :href="item.href" 
+                           :class="item.visible ? 'text-gray-700 hover:text-blue-600' : 'text-gray-400 cursor-not-allowed'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                           x-show="item.visible"
+                           @click="item.visible ? null : $event.preventDefault()">
+                            <span x-text="item.name"></span>
                         </a>
                     </template>
                 </div>
@@ -133,32 +115,13 @@
                 </svg>
             </button>
         </div>
-        <nav class="mobile-menu-nav">
-            <a href="/dashboard" class="mobile-menu-item">
-                Dashboard
-            </a>
-            <a href="/products" class="mobile-menu-item">
-                Productos
-            </a>
-            <a href="/stock" class="mobile-menu-item">
-                Stock
-            </a>
-            <a href="/categories" class="mobile-menu-item active">
-                Categorías
-            </a>
-            <template x-if="canAccessOrders">
-                <a href="/orders" class="mobile-menu-item">
-                    Órdenes
-                </a>
-            </template>
-            <template x-if="canAccessPurchases">
-                <a href="/purchases" class="mobile-menu-item">
-                    Compras
-                    </a>
-            </template>
-            <template x-if="canAccessUsers">
-                <a href="/users" class="mobile-menu-item">
-                    Usuarios
+                <nav class="mobile-menu-nav">
+            <template x-for="item in navigationItems" :key="item.name">
+                <a :href="item.href" 
+                   :class="item.visible ? 'mobile-menu-item' : 'mobile-menu-item disabled'"
+                   x-show="item.visible"
+                   @click="item.visible ? null : $event.preventDefault()">
+                    <span x-text="item.name"></span>
                 </a>
             </template>
         </nav>
@@ -412,22 +375,28 @@
     <script>
         function categoriesApp() {
             return {
-                user: {},
+                // User info
+                user: { name: 'Usuario' },
+                userInitials: 'U',
+
+                // Navigation items
+                navigationItems: [
+                    { name: 'Dashboard', href: '/dashboard', visible: true },
+                    { name: 'Productos', href: '/products', visible: true },
+                    { name: 'Stock', href: '/stock', visible: true },
+                    { name: 'Categorías', href: '/categories', visible: true },
+                    { name: 'Órdenes', href: '/orders', visible: false },
+                    { name: 'Compras', href: '/purchases', visible: false },
+                    { name: 'Usuarios', href: '/users', visible: false }
+                ],
+
+                // Categories data
                 categories: [],
                 filteredCategories: [],
                 searchTerm: '',
                 showCreateModal: false,
                 showEditModal: false,
                 showViewModal: false,
-                
-                // Theme management
-                initTheme() {
-                    // Initialize theme from localStorage
-                    const savedTheme = localStorage.getItem('theme') || 'light';
-                    if (savedTheme === 'dark') {
-                        document.body.classList.add('dark-mode');
-                    }
-                },
                 categoryForm: {
                     name: ''
                 },
@@ -616,18 +585,44 @@
                 },
                 
                 // Initialize
-                init() {
-                    const user = localStorage.getItem('user');
-                    if (!user) {
-                        window.location.href = '/login';
-                        return;
-                    }
-                    
+                async init() {
+                    await this.loadUserInfo();
+                    await this.loadCategories();
+                },
+
+                // Load user info and permissions
+                async loadUserInfo() {
                     try {
-                        this.user = JSON.parse(user);
-                        this.refreshCategories();
+                        const user = await getCurrentUser();
+                        if (user) {
+                            this.user = user;
+                            this.userInitials = user.first_name ? 
+                                (user.first_name.charAt(0) + (user.last_name ? user.last_name.charAt(0) : '')).toUpperCase() :
+                                user.username.charAt(0).toUpperCase();
+                            
+                            // Update navigation visibility based on permissions
+                            this.navigationItems.forEach(item => {
+                                if (item.name === 'Compras') {
+                                    item.visible = user.permissions.includes('read') || user.role === 'admin';
+                                } else if (item.name === 'Usuarios') {
+                                    item.visible = user.permissions.includes('manage_users') || user.role === 'admin';
+                                } else if (item.name === 'Órdenes') {
+                                    item.visible = user.permissions.includes('read') || user.role === 'admin';
+                                }
+                            });
+                        }
                     } catch (error) {
-                        console.error('Error parsing user data:', error);
+                        console.error('Error loading user info:', error);
+                    }
+                },
+
+                // Logout
+                async logout() {
+                    try {
+                        await logout();
+                        window.location.href = '/login';
+                    } catch (error) {
+                        console.error('Error logging out:', error);
                         window.location.href = '/login';
                     }
                 }

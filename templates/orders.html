@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management - Órdenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/mobile-menu.js') }}" defer></script>
+</head>
+<body class="bg-gray-100" x-data="ordersApp()" x-init="initTheme()">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo and Title -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-xl font-semibold text-gray-900">Stock Management</h1>
+                    </div>
+                </div>
+
+                <!-- Navigation Menu -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <template x-for="item in navigationItems" :key="item.name">
+                        <a :href="item.href" 
+                           :class="item.visible ? 'text-gray-700 hover:text-blue-600' : 'text-gray-400 cursor-not-allowed'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                           x-show="item.visible"
+                           @click="item.visible ? null : $event.preventDefault()">
+                            <span x-text="item.name"></span>
+                        </a>
+                    </template>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="mobile-menu-button">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- User Menu -->
+                <div class="flex items-center space-x-2">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="theme-toggle">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="relative" x-data="{ open: false }">
+                        <div>
+                            <button @click="open = !open" 
+                                    class="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                    <span class="text-white font-medium" x-text="userInitials"></span>
+                                </div>
+                                <span class="ml-2 text-gray-700" x-text="user.name"></span>
+                                <svg class="ml-2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Dropdown Menu -->
+                        <div x-show="open" 
+                             @click.away="open = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5">
+                            <a href="/profile" @click="open = false" 
+                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                Mi Perfil
+                            </a>
+                            <a href="#" @click="logout(); open = false" 
+                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay hidden"></div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu">
+        <div class="mobile-menu-header">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Menú</h2>
+            <button id="mobile-menu-close" class="mobile-menu-close">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <template x-for="item in navigationItems" :key="item.name">
+                <a :href="item.href" 
+                   :class="item.visible ? 'mobile-menu-item' : 'mobile-menu-item disabled'"
+                   x-show="item.visible"
+                   @click="item.visible ? null : $event.preventDefault()">
+                    <span x-text="item.name"></span>
+                </a>
+            </template>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-shopping-cart text-blue-600"></i>
+                    Gestión de Órdenes
+                </h1>
+                <p class="text-gray-600">Crea y gestiona órdenes de venta de productos</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-clock text-yellow-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Órdenes Pendientes</dt>
+                                    <dd class="text-lg font-medium text-gray-900" x-text="stats.pending"></dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Órdenes Completadas</dt>
+                                    <dd class="text-lg font-medium text-gray-900" x-text="stats.completed"></dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-dollar-sign text-blue-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Total Vendido</dt>
+                                    <dd class="text-lg font-medium text-gray-900" x-text="'$' + stats.totalSales.toFixed(2)"></dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mb-6 flex flex-col sm:flex-row gap-4">
+                <button @click="showCreateForm = true" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    Nueva Orden
+                </button>
+                <button @click="loadOrders()" 
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md flex items-center">
+                    <i class="fas fa-refresh mr-2"></i>
+                    Actualizar
+                </button>
+            </div>
+
+            <!-- Create Order Form -->
+            <div x-show="showCreateForm" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-95"
+                 class="bg-white shadow rounded-lg mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Crear Nueva Orden</h3>
+                </div>
+                <div class="p-6">
+                    <form @submit.prevent="createOrder()">
+                        <!-- Customer Information -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Cliente</label>
+                                <input type="text" 
+                                       x-model="newOrder.customer_name" 
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" 
+                                       x-model="newOrder.customer_email" 
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                                <input type="tel" 
+                                       x-model="newOrder.customer_phone" 
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <!-- Product Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Agregar Productos</label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <select x-model="selectedProduct" 
+                                        @change="updateProductPrice()"
+                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Seleccionar producto</option>
+                                    <template x-for="product in products" :key="product.id">
+                                        <option :value="product.id" x-text="product.name"></option>
+                                    </template>
+                                </select>
+                                <input type="number" 
+                                       x-model="selectedQuantity" 
+                                       placeholder="Cantidad" 
+                                       min="1" 
+                                       class="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="number" 
+                                       x-model="selectedPrice" 
+                                       placeholder="Precio" 
+                                       step="0.01" 
+                                       min="0"
+                                       class="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button type="button" 
+                                        @click="addProductToOrder()" 
+                                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Order Items -->
+                        <div x-show="newOrder.items.length > 0" class="mb-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Productos en la Orden</h4>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <template x-for="(item, index) in newOrder.items" :key="index">
+                                    <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                                        <div class="flex-1">
+                                            <span x-text="item.product_name"></span>
+                                            <span class="text-gray-500 ml-2">x <span x-text="item.quantity"></span></span>
+                                        </div>
+                                        <div class="flex items-center space-x-4">
+                                            <span class="font-medium" x-text="'$' + (item.quantity * item.unit_price).toFixed(2)"></span>
+                                            <button type="button" 
+                                                    @click="removeProductFromOrder(index)" 
+                                                    class="text-red-600 hover:text-red-800">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-lg font-medium">Total:</span>
+                                        <span class="text-lg font-bold text-blue-600" x-text="'$' + calculateOrderTotal().toFixed(2)"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notas (opcional)</label>
+                            <textarea x-model="newOrder.notes" 
+                                      rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex justify-end space-x-4">
+                            <button type="button" 
+                                    @click="cancelCreateOrder()" 
+                                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                Cancelar
+                            </button>
+                            <button type="submit" 
+                                    :disabled="newOrder.items.length === 0"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Crear Orden
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Orders List -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Órdenes</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="order in orders" :key="order.id">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="order.id"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900" x-text="order.customer_name"></div>
+                                        <div class="text-sm text-gray-500" x-text="order.customer_email"></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="'$' + order.total.toFixed(2)"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span x-show="order.status === 'pending'" 
+                                              class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            Pendiente
+                                        </span>
+                                        <span x-show="order.status === 'completed'" 
+                                              class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            Completada
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(order.created_at)"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                        <button @click="viewOrder(order)" 
+                                                class="text-blue-600 hover:text-blue-900">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <template x-if="order.status === 'pending'">
+                                            <button @click="completeOrder(order)" 
+                                                    class="text-green-600 hover:text-green-900">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </template>
+                                        <button @click="deleteOrder(order)" 
+                                                class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div x-show="showOrderModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showOrderModal = false"></div>
+            
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Detalles de la Orden</h3>
+                    <template x-if="selectedOrder">
+                        <div>
+                            <div class="mb-4">
+                                <h4 class="font-medium text-gray-900">Información del Cliente</h4>
+                                <p class="text-sm text-gray-600" x-text="selectedOrder.customer_name"></p>
+                                <p class="text-sm text-gray-600" x-text="selectedOrder.customer_email"></p>
+                                <p class="text-sm text-gray-600" x-text="selectedOrder.customer_phone"></p>
+                            </div>
+                            <div class="mb-4">
+                                <h4 class="font-medium text-gray-900">Productos</h4>
+                                <template x-for="item in selectedOrder.items" :key="item.id">
+                                    <div class="flex justify-between text-sm">
+                                        <span x-text="item.product_name + ' x ' + item.quantity"></span>
+                                        <span x-text="'$' + (item.quantity * item.unit_price).toFixed(2)"></span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t pt-4">
+                                <div class="flex justify-between font-medium">
+                                    <span>Total:</span>
+                                    <span x-text="'$' + selectedOrder.total.toFixed(2)"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button @click="showOrderModal = false" 
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/config.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/http-helper.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/page-utils.js') }}" defer></script>
+    
+    <script>
+        function ordersApp() {
+            return {
+                // State
+                orders: [],
+                products: [],
+                stats: {
+                    pending: 0,
+                    completed: 0,
+                    totalSales: 0
+                },
+                showCreateForm: false,
+                showOrderModal: false,
+                selectedOrder: null,
+                selectedProduct: '',
+                selectedQuantity: 1,
+                selectedPrice: 0,
+                newOrder: {
+                    customer_name: '',
+                    customer_email: '',
+                    customer_phone: '',
+                    notes: '',
+                    items: []
+                },
+
+                // User info
+                user: { name: 'Usuario' },
+                userInitials: 'U',
+
+                // Navigation items
+                navigationItems: [
+                    { name: 'Dashboard', href: '/dashboard', visible: true },
+                    { name: 'Productos', href: '/products', visible: true },
+                    { name: 'Stock', href: '/stock', visible: true },
+                    { name: 'Categorías', href: '/categories', visible: true },
+                    { name: 'Órdenes', href: '/orders', visible: true },
+                    { name: 'Compras', href: '/purchases', visible: false },
+                    { name: 'Usuarios', href: '/users', visible: false }
+                ],
+
+                // Initialize
+                async init() {
+                    await this.loadUserInfo();
+                    await this.loadProducts();
+                    await this.loadOrders();
+                },
+
+                // Load user info and permissions
+                async loadUserInfo() {
+                    try {
+                        const user = await getCurrentUser();
+                        if (user) {
+                            this.user = user;
+                            this.userInitials = user.first_name ? 
+                                (user.first_name.charAt(0) + (user.last_name ? user.last_name.charAt(0) : '')).toUpperCase() :
+                                user.username.charAt(0).toUpperCase();
+                            
+                            // Update navigation visibility based on permissions
+                            this.navigationItems.forEach(item => {
+                                if (item.name === 'Compras') {
+                                    item.visible = user.permissions.includes('read') || user.role === 'admin';
+                                } else if (item.name === 'Usuarios') {
+                                    item.visible = user.permissions.includes('manage_users') || user.role === 'admin';
+                                } else if (item.name === 'Órdenes') {
+                                    item.visible = user.permissions.includes('read') || user.role === 'admin';
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error loading user info:', error);
+                    }
+                },
+
+                // Load products
+                async loadProducts() {
+                    try {
+                        const response = await httpGet('/api/products');
+                        this.products = response.products || [];
+                    } catch (error) {
+                        console.error('Error loading products:', error);
+                        showToast('Error al cargar productos', 'error');
+                    }
+                },
+
+                // Load orders
+                async loadOrders() {
+                    try {
+                        const response = await httpGet('/api/orders');
+                        this.orders = response.orders || [];
+                        this.updateStats();
+                    } catch (error) {
+                        console.error('Error loading orders:', error);
+                        showToast('Error al cargar órdenes', 'error');
+                    }
+                },
+
+                // Update stats
+                updateStats() {
+                    this.stats.pending = this.orders.filter(o => o.status === 'pending').length;
+                    this.stats.completed = this.orders.filter(o => o.status === 'completed').length;
+                    this.stats.totalSales = this.orders
+                        .filter(o => o.status === 'completed')
+                        .reduce((sum, o) => sum + o.total, 0);
+                },
+
+                // Update product price when product is selected
+                updateProductPrice() {
+                    if (this.selectedProduct) {
+                        const product = this.products.find(p => p.id == this.selectedProduct);
+                        if (product) {
+                            this.selectedPrice = product.price || 0;
+                        }
+                    }
+                },
+
+                // Add product to order
+                addProductToOrder() {
+                    if (!this.selectedProduct || !this.selectedQuantity || this.selectedQuantity <= 0) {
+                        showToast('Por favor selecciona un producto y cantidad válida', 'error');
+                        return;
+                    }
+
+                    const product = this.products.find(p => p.id == this.selectedProduct);
+                    if (!product) {
+                        showToast('Producto no encontrado', 'error');
+                        return;
+                    }
+
+                    // Check if product already exists in order
+                    const existingItem = this.newOrder.items.find(item => item.product_id == this.selectedProduct);
+                    if (existingItem) {
+                        existingItem.quantity += parseInt(this.selectedQuantity);
+                    } else {
+                        this.newOrder.items.push({
+                            product_id: parseInt(this.selectedProduct),
+                            product_name: product.name,
+                            quantity: parseInt(this.selectedQuantity),
+                            unit_price: parseFloat(this.selectedPrice)
+                        });
+                    }
+
+                    // Reset selection
+                    this.selectedProduct = '';
+                    this.selectedQuantity = 1;
+                    this.selectedPrice = 0;
+                },
+
+                // Remove product from order
+                removeProductFromOrder(index) {
+                    this.newOrder.items.splice(index, 1);
+                },
+
+                // Calculate order total
+                calculateOrderTotal() {
+                    return this.newOrder.items.reduce((total, item) => {
+                        return total + (item.quantity * item.unit_price);
+                    }, 0);
+                },
+
+                // Create order
+                async createOrder() {
+                    if (this.newOrder.items.length === 0) {
+                        showToast('Debes agregar al menos un producto', 'error');
+                        return;
+                    }
+
+                    try {
+                        const orderData = {
+                            ...this.newOrder,
+                            total: this.calculateOrderTotal(),
+                            items: this.newOrder.items.map(item => ({
+                                product_id: item.product_id,
+                                quantity: item.quantity,
+                                unit_price: item.unit_price
+                            }))
+                        };
+
+                        await httpPost('/api/orders', orderData);
+                        showToast('Orden creada exitosamente', 'success');
+                        this.cancelCreateOrder();
+                        await this.loadOrders();
+                    } catch (error) {
+                        console.error('Error creating order:', error);
+                        showToast('Error al crear la orden', 'error');
+                    }
+                },
+
+                // Cancel create order
+                cancelCreateOrder() {
+                    this.showCreateForm = false;
+                    this.newOrder = {
+                        customer_name: '',
+                        customer_email: '',
+                        customer_phone: '',
+                        notes: '',
+                        items: []
+                    };
+                },
+
+                // View order details
+                viewOrder(order) {
+                    this.selectedOrder = order;
+                    this.showOrderModal = true;
+                },
+
+                // Complete order
+                async completeOrder(order) {
+                    if (!confirm('¿Estás seguro de completar esta orden?')) {
+                        return;
+                    }
+
+                    try {
+                        await httpPut(`/api/orders/${order.id}/complete`);
+                        showToast('Orden completada exitosamente', 'success');
+                        await this.loadOrders();
+                    } catch (error) {
+                        console.error('Error completing order:', error);
+                        showToast('Error al completar la orden', 'error');
+                    }
+                },
+
+                // Delete order
+                async deleteOrder(order) {
+                    if (!confirm('¿Estás seguro de eliminar esta orden?')) {
+                        return;
+                    }
+
+                    try {
+                        await httpDelete(`/api/orders/${order.id}`);
+                        showToast('Orden eliminada exitosamente', 'success');
+                        await this.loadOrders();
+                    } catch (error) {
+                        console.error('Error deleting order:', error);
+                        showToast('Error al eliminar la orden', 'error');
+                    }
+                },
+
+                // Format date
+                formatDate(dateString) {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+
+                // Logout
+                async logout() {
+                    try {
+                        await logout();
+                        window.location.href = '/login';
+                    } catch (error) {
+                        console.error('Error logging out:', error);
+                        window.location.href = '/login';
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

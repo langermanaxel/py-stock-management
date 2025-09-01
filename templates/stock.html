@@ -6,8 +6,10 @@
     <title>Stock Management - Stock</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/mobile-menu.js') }}" defer></script>
 </head>
-<body class="bg-gray-100" x-data="stockApp()">
+<body class="bg-gray-100" x-data="stockApp()" x-init="initTheme()">
     <!-- Navigation Bar -->
     <nav class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,38 +30,36 @@
 
                 <!-- Navigation Menu -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="/dashboard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        Dashboard
-                    </a>
-                    <a href="/products" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        Productos
-                    </a>
-                    <a href="/stock" class="text-blue-600 bg-blue-50 px-3 py-2 rounded-md text-sm font-medium">
-                        Stock
-                    </a>
-                    <a href="/categories" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        Categorías
-                    </a>
-                    <template x-if="canAccessOrders">
-                        <a href="/orders" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                            Órdenes
-                        </a>
-                    </template>
-                    <template x-if="canAccessPurchases">
-                        <a href="/purchases" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                            Compras
-                        </a>
-                    </template>
-                    <template x-if="canAccessUsers">
-                        <a href="/users" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                            Usuarios
+                    <template x-for="item in navigationItems" :key="item.name">
+                        <a :href="item.href" 
+                           :class="item.visible ? 'text-gray-700 hover:text-blue-600' : 'text-gray-400 cursor-not-allowed'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                           x-show="item.visible"
+                           @click="item.visible ? null : $event.preventDefault()">
+                            <span x-text="item.name"></span>
                         </a>
                     </template>
                 </div>
 
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="mobile-menu-button">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
                 <!-- User Menu -->
-                <div class="flex items-center">
-                    <div class="ml-3 relative" x-data="{ open: false }">
+                <div class="flex items-center space-x-2">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="theme-toggle">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="relative" x-data="{ open: false }">
                         <div>
                             <button @click="open = !open" 
                                     class="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -97,6 +97,31 @@
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay hidden"></div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu">
+        <div class="mobile-menu-header">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Menú</h2>
+            <button class="mobile-menu-close" onclick="mobileMenuManager.closeMobileMenu()">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <template x-for="item in navigationItems" :key="item.name">
+                <a :href="item.href" 
+                   :class="item.visible ? 'mobile-menu-item' : 'mobile-menu-item disabled'"
+                   x-show="item.visible"
+                   @click="item.visible ? null : $event.preventDefault()">
+                    <span x-text="item.name"></span>
+                </a>
+            </template>
+        </nav>
+    </div>
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -372,7 +397,22 @@
     <script>
         function stockApp() {
             return {
-                user: {},
+                // User info
+                user: { name: 'Usuario' },
+                userInitials: 'U',
+
+                // Navigation items
+                navigationItems: [
+                    { name: 'Dashboard', href: '/dashboard', visible: true },
+                    { name: 'Productos', href: '/products', visible: true },
+                    { name: 'Stock', href: '/stock', visible: true },
+                    { name: 'Categorías', href: '/categories', visible: true },
+                    { name: 'Órdenes', href: '/orders', visible: false },
+                    { name: 'Compras', href: '/purchases', visible: false },
+                    { name: 'Usuarios', href: '/users', visible: false }
+                ],
+
+                // Stock data
                 stock: [],
                 products: [],
                 filteredStock: [],
@@ -622,35 +662,50 @@
                     this.editingStockId = null;
                 },
                 
+                // Initialize
+                async init() {
+                    await this.loadUserInfo();
+                    await this.loadProducts();
+                    await this.loadStock();
+                },
+
+                // Load user info and permissions
+                async loadUserInfo() {
+                    try {
+                        const user = await getCurrentUser();
+                        if (user) {
+                            this.user = user;
+                            this.userInitials = user.first_name ? 
+                                (user.first_name.charAt(0) + (user.last_name ? user.last_name.charAt(0) : '')).toUpperCase() :
+                                user.username.charAt(0).toUpperCase();
+                            
+                            // Update navigation visibility based on permissions
+                            this.navigationItems.forEach(item => {
+                                if (item.name === 'Compras') {
+                                    item.visible = user.permissions.includes('read') || user.role === 'admin';
+                                } else if (item.name === 'Usuarios') {
+                                    item.visible = user.permissions.includes('manage_users') || user.role === 'admin';
+                                } else if (item.name === 'Órdenes') {
+                                    item.visible = user.permissions.includes('read') || user.role === 'admin';
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error loading user info:', error);
+                    }
+                },
+
                 async logout() {
                     try {
-                        localStorage.removeItem('access_token');
-                        localStorage.removeItem('refresh_token');
-                        localStorage.removeItem('user');
+                        await logout();
                         window.location.href = '/login';
                     } catch (error) {
-                        console.error('Error en logout:', error);
+                        console.error('Error logging out:', error);
                         window.location.href = '/login';
                     }
                 },
                 
-                // Initialize
-                init() {
-                    const user = localStorage.getItem('user');
-                    if (!user) {
-                        window.location.href = '/login';
-                        return;
-                    }
-                    
-                    try {
-                        this.user = JSON.parse(user);
-                        this.refreshStock();
-                        this.loadProducts();
-                    } catch (error) {
-                        console.error('Error parsing user data:', error);
-                        window.location.href = '/login';
-                    }
-                }
+
             }
         }
     </script>
