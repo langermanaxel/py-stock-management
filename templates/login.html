@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Management - Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/session-banners.css') }}">
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/feedback.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/form-ux.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/jwt-validator.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/session-manager.js') }}" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
@@ -25,18 +30,32 @@
         </div>
 
         <!-- Login Form -->
-        <form class="mt-8 space-y-6" x-data="loginForm()" @submit.prevent="handleLogin">
+        <form class="mt-8 space-y-6" x-data="loginForm()" @submit.prevent="handleLogin" role="form" aria-label="Formulario de inicio de sesión">
             <!-- Alert Messages -->
             <div x-show="alert.show" 
                  x-transition
                  :class="alert.type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'"
-                 class="p-4 border rounded-md">
-                <span x-text="alert.message"></span>
+                 class="p-4 border rounded-md"
+                 role="alert"
+                 aria-live="polite">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg x-show="alert.type === 'error'" class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <svg x-show="alert.type === 'success'" class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <span x-text="alert.message"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- Username Field -->
-            <div>
-                <label for="username" class="block text-sm font-medium text-gray-700">
+            <div class="form-group">
+                <label for="username" class="form-label required">
                     Usuario
                 </label>
                 <div class="mt-1">
@@ -44,15 +63,23 @@
                            name="username" 
                            type="text" 
                            required 
+                           minlength="3"
+                           maxlength="50"
                            x-model="form.username"
-                           class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Ingresa tu usuario">
+                           class="form-input appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Ingresa tu usuario"
+                           :class="{ 'error': errors.username }"
+                           aria-describedby="username-help username-error">
+                    <div id="username-help" class="help-text">Ingresa tu nombre de usuario (mínimo 3 caracteres)</div>
+                    <div x-show="errors.username" id="username-error" class="error-message" role="alert">
+                        <span x-text="errors.username"></span>
+                    </div>
                 </div>
             </div>
 
             <!-- Password Field -->
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">
+            <div class="form-group">
+                <label for="password" class="form-label required">
                     Contraseña
                 </label>
                 <div class="mt-1">
@@ -60,9 +87,17 @@
                            name="password" 
                            type="password" 
                            required 
+                           minlength="6"
+                           maxlength="100"
                            x-model="form.password"
-                           class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Ingresa tu contraseña">
+                           class="form-input appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Ingresa tu contraseña"
+                           :class="{ 'error': errors.password }"
+                           aria-describedby="password-help password-error">
+                    <div id="password-help" class="help-text">Ingresa tu contraseña (mínimo 6 caracteres)</div>
+                    <div x-show="errors.password" id="password-error" class="error-message" role="alert">
+                        <span x-text="errors.password"></span>
+                    </div>
                 </div>
             </div>
 
@@ -133,16 +168,31 @@
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify(this.form)
+                            body: JSON.stringify(this.form),
+                            credentials: 'include' // Include cookies for web session
                         });
                         
                         const data = await response.json();
                         
                         if (response.ok) {
+                            // Validate JWT token before storing
+                            if (window.jwtValidator && data.access_token) {
+                                const validation = window.jwtValidator.validateToken(data.access_token);
+                                if (!validation.valid) {
+                                    this.showAlert('error', 'Token inválido. Intenta nuevamente.');
+                                    return;
+                                }
+                            }
+                            
                             // Guardar token y datos del usuario
                             localStorage.setItem('access_token', data.access_token);
                             localStorage.setItem('refresh_token', data.refresh_token);
                             localStorage.setItem('user', JSON.stringify(data.user));
+                            
+                            // Initialize session manager
+                            if (window.sessionManager) {
+                                window.sessionManager.updateLastActivity();
+                            }
                             
                             this.showAlert('success', 'Login exitoso! Redirigiendo...');
                             
@@ -151,9 +201,17 @@
                                 window.location.href = '/dashboard';
                             }, 1000);
                         } else {
-                            this.showAlert('error', data.message || 'Error en el login');
+                            // Handle specific error types
+                            if (response.status === 401) {
+                                this.showAlert('error', 'Credenciales inválidas. Verifica tu usuario y contraseña.');
+                            } else if (response.status === 429) {
+                                this.showAlert('error', 'Demasiados intentos. Espera unos minutos antes de intentar nuevamente.');
+                            } else {
+                                this.showAlert('error', data.message || 'Error en el login');
+                            }
                         }
                     } catch (error) {
+                        console.error('Login error:', error);
                         this.showAlert('error', 'Error de conexión. Intenta nuevamente.');
                     } finally {
                         this.loading = false;

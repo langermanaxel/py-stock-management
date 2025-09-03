@@ -98,13 +98,27 @@ class HTTPHelper {
         const url = `${this.baseURL}${endpoint}`;
         
         try {
+            // Get authentication headers from session manager
+            const authHeaders = window.sessionManager ? window.sessionManager.getAuthHeaders() : {};
+            
             const response = await fetch(url, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
+                    ...authHeaders,
                     ...options.headers
-                }
+                },
+                credentials: 'include' // Include cookies for web session
             });
+
+            // Handle 401 Unauthorized responses
+            if (response.status === 401) {
+                if (window.sessionManager) {
+                    await window.sessionManager.handleUnauthorized();
+                }
+                const error = await this.parseErrorResponse(response);
+                throw error;
+            }
 
             // Si la respuesta no es exitosa, parsear el error
             if (!response.ok) {

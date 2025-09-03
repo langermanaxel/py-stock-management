@@ -10,8 +10,8 @@
     <script src="{{ url_for('static', filename='js/mobile-menu.js') }}" defer></script>
 </head>
 <body class="bg-gray-100" x-data="ordersApp()" x-init="initTheme()">
-    <!-- Navigation Bar -->
-    <nav class="bg-white shadow-lg">
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <!-- Logo and Title -->
@@ -29,7 +29,7 @@
                 </div>
 
                 <!-- Navigation Menu -->
-                <div class="hidden md:flex items-center space-x-4">
+                <nav class="hidden md:flex items-center space-x-4">
                     <template x-for="item in navigationItems" :key="item.name">
                         <a :href="item.href" 
                            :class="item.visible ? 'text-gray-700 hover:text-blue-600' : 'text-gray-400 cursor-not-allowed'"
@@ -39,7 +39,7 @@
                             <span x-text="item.name"></span>
                         </a>
                     </template>
-                </div>
+                </nav>
 
                 <!-- Mobile menu button -->
                 <div class="md:hidden">
@@ -98,7 +98,7 @@
 
 
         </div>
-    </nav>
+    </header>
 
     <!-- Mobile Menu Overlay -->
     <div id="mobile-menu-overlay" class="mobile-menu-overlay hidden"></div>
@@ -329,18 +329,19 @@
             <!-- Orders List -->
             <div class="bg-white shadow rounded-lg">
                 <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Órdenes</h3>
+                    <h2 class="text-lg font-medium text-gray-900">Órdenes</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
+                        <caption class="sr-only">Tabla de órdenes con información de ID, cliente, total, estado y fecha</caption>
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -711,5 +712,14 @@
             }
         }
     </script>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p class="text-sm">&copy; 2024 Sistema de Gestión de Inventario. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

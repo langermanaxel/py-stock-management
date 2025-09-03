@@ -4,16 +4,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Management - Productos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
-    <script src="{{ url_for('static', filename='js/mobile-menu.js') }}" defer></script>
+    <!-- Critical CSS - Inline for faster loading -->
+    <style>
+        /* Critical CSS inline for above-the-fold content */
+        .header-layout { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
+        .main-layout { display: grid; gap: 1.5rem; padding: 1rem; }
+        .content-area { display: flex; flex-direction: column; gap: 1.5rem; }
+        .button-layout { display: flex; flex-direction: column; gap: 0.75rem; }
+        .search-layout { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
+        .mobile-btn { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; border: 1px solid transparent; border-radius: 0.5rem; background: #2563eb; color: white; font-size: 1rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: background-color 0.2s; }
+        .mobile-btn:hover { background: #1d4ed8; }
+        .search-input { flex: 1; min-height: 48px; padding: 0.75rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background: white; font-size: 1rem; transition: border-color 0.2s; }
+        .search-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); outline: none; }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .modal-layout { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
+        .modal-content { width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; background: white; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #e5e7eb; }
+        .form-layout { display: flex; flex-direction: column; gap: 1rem; }
+        @media (min-width: 768px) {
+            .header-layout { flex-direction: row; align-items: center; justify-content: space-between; }
+            .main-layout { grid-template-columns: 1fr 300px; padding: 1.5rem; }
+            .button-layout { flex-direction: row; align-items: center; justify-content: flex-end; }
+            .search-layout { flex-direction: row; align-items: center; justify-content: space-between; }
+            .mobile-btn { width: auto; min-height: 40px; padding: 0.75rem 1.5rem; font-size: 0.875rem; }
+            .search-input { min-width: 300px; font-size: 0.875rem; }
+            .form-layout { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        }
+        @media (min-width: 1024px) {
+            .main-layout { grid-template-columns: 1fr 350px; padding: 2rem; }
+        }
+    </style>
+
+               <!-- Preload critical resources -->
+           <link rel="preload" href="{{ url_for('static', filename='css/design-tokens.css') }}" as="style">
+           <link rel="preload" href="{{ url_for('static', filename='css/components.css') }}" as="style">
+           <link rel="preload" href="{{ url_for('static', filename='css/responsive.css') }}" as="style">
+           <link rel="preload" href="{{ url_for('static', filename='css/session-banners.css') }}" as="style">
+           <link rel="preload" href="{{ url_for('static', filename='js/performance.js') }}" as="script" crossorigin="anonymous">
+           <link rel="preload" href="{{ url_for('static', filename='js/accessibility.js') }}" as="script" crossorigin="anonymous">
+           <link rel="preload" href="{{ url_for('static', filename='js/feedback.js') }}" as="script" crossorigin="anonymous">
+           <link rel="preload" href="{{ url_for('static', filename='js/form-ux.js') }}" as="script" crossorigin="anonymous">
+           <link rel="preload" href="{{ url_for('static', filename='js/jwt-validator.js') }}" as="script" crossorigin="anonymous">
+           <link rel="preload" href="{{ url_for('static', filename='js/session-manager.js') }}" as="script" crossorigin="anonymous">
+
+    <!-- Load non-critical CSS asynchronously -->
+    <link rel="preload" href="{{ url_for('static', filename='css/style.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></noscript>
+
+               <!-- Critical JavaScript - Load immediately -->
+           <script src="{{ url_for('static', filename='js/performance.js') }}" defer></script>
+           <script src="{{ url_for('static', filename='js/accessibility.js') }}" defer></script>
+           <script src="{{ url_for('static', filename='js/feedback.js') }}" defer></script>
+           <script src="{{ url_for('static', filename='js/form-ux.js') }}" defer></script>
+           <script src="{{ url_for('static', filename='js/jwt-validator.js') }}" defer></script>
+           <script src="{{ url_for('static', filename='js/session-manager.js') }}" defer></script>
+
+    <!-- Alpine.js - Load with high priority -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer fetchpriority="high"></script>
+
+    <!-- View-specific scripts - Load asynchronously -->
+    <script>
+        // Load view-specific scripts after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.performanceManager) {
+                window.performanceManager.loadViewScripts('products');
+            } else {
+                // Fallback loading
+                const scripts = [
+                    '{{ url_for("static", filename="js/table-manager.js") }}',
+                    '{{ url_for("static", filename="js/responsive-tables.js") }}'
+                ];
+                
+                scripts.forEach(src => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.defer = true;
+                    document.head.appendChild(script);
+                });
+            }
+        });
+    </script>
+
+    <!-- Non-critical scripts - Load with low priority -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer fetchpriority="low"></script>
+    <script src="{{ url_for('static', filename='js/mobile-menu.js') }}" defer fetchpriority="low"></script>
 </head>
 <body class="bg-gray-100" x-data="productsApp()" x-init="initTheme()">
-    <!-- Navigation Bar -->
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
+    <!-- Skip Links for Keyboard Navigation -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+    <a href="#navigation" class="skip-link">Saltar a la navegación</a>
+    
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="header-layout">
+            <div class="flex justify-between items-center h-16">
                 <!-- Logo and Title -->
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -29,7 +112,7 @@
                 </div>
 
                 <!-- Navigation Menu -->
-                <div class="hidden md:flex items-center space-x-4">
+                <nav id="navigation" class="hidden md:flex items-center space-x-4" role="navigation" aria-label="Navegación principal">
                     <template x-for="item in navigationItems" :key="item.name">
                         <a :href="item.href" 
                            :class="item.visible ? 'text-gray-700 hover:text-blue-600' : 'text-gray-400 cursor-not-allowed'"
@@ -39,7 +122,7 @@
                             <span x-text="item.name"></span>
                         </a>
                     </template>
-                </div>
+                </nav>
 
                 <!-- Mobile menu button -->
                 <div class="md:hidden">
@@ -96,7 +179,7 @@
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
     <!-- Mobile Menu Overlay -->
     <div id="mobile-menu-overlay" class="mobile-menu-overlay hidden"></div>
@@ -124,23 +207,23 @@
     </div>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main id="main-content" class="main-layout" role="main" tabindex="-1">
         <!-- Header Section -->
-        <div class="px-4 py-6 sm:px-0">
+        <section class="content-area">
             <div class="bg-white overflow-hidden shadow rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="header-layout mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-900">Gestión de Productos</h2>
                             <p class="text-gray-600">Administra el catálogo de productos del sistema</p>
                         </div>
                         
                         <!-- Action Buttons -->
-                        <div class="flex space-x-3">
+                        <div class="button-layout">
                             <template x-if="canCreateProducts">
                                 <button @click="showCreateModal = true" 
-                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <svg class="h-5 w-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="mobile-btn">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
                                     Nuevo Producto
@@ -148,8 +231,8 @@
                             </template>
                             
                             <button @click="refreshProducts" 
-                                    class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                                <svg class="h-5 w-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="btn btn--secondary">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                 </svg>
                                 Actualizar
@@ -158,17 +241,17 @@
                     </div>
 
                     <!-- Search and Filters -->
-                    <div class="mb-6">
-                        <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="search-layout">
+                        <div class="mobile-search">
                             <div class="flex-1">
                                 <input type="text" 
                                        x-model="searchTerm" 
                                        @input="filterProducts"
                                        placeholder="Buscar productos..."
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                       class="search-input">
                             </div>
                             <div class="flex gap-2">
-                                <select x-model="selectedCategory" @change="filterProducts" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <select x-model="selectedCategory" @change="filterProducts" class="input input--md">
                                     <option value="">Todas las categorías</option>
                                     <template x-for="category in categories" :key="category.id">
                                         <option :value="category.id" x-text="category.name"></option>
@@ -179,74 +262,91 @@
                     </div>
 
                     <!-- Products Table -->
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                    <div class="table-container">
+                        <table id="products-table" class="table table--striped" data-table='{"enableSearch": true, "enableFilters": true, "enableSorting": true, "enablePagination": true, "pageSize": 10}' data-responsive>
+                            <caption class="sr-only">Tabla de productos del inventario con información de categoría, precio, stock mínimo y estado</caption>
+                            <thead class="table__header">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="table__header-cell" data-sort="name" data-key="name">
                                         Producto
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="table__header-cell" data-sort="category_name" data-key="category_name" data-filter="select" data-filter-key="category_name">
                                         Categoría
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="table__header-cell" data-sort="price" data-key="price">
                                         Precio
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="table__header-cell" data-sort="min_stock" data-key="min_stock">
                                         Stock Mínimo
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="table__header-cell" data-sort="status" data-key="status" data-filter="select" data-filter-key="status">
                                         Estado
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="table__header-cell">
                                         Acciones
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="table__body">
                                 <template x-for="product in filteredProducts" :key="product.id">
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                                    </svg>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900" x-text="product.name"></div>
-                                                    <div class="text-sm text-gray-500" x-text="product.description"></div>
+                                    <tr class="table__row" :data-id="product.id">
+                                        <td class="table__cell" :data-name="product.name" :data-description="product.description">
+                                            <div class="flex items-center gap-3">
+                                                                                                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                     <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" loading="lazy" decoding="async">
+                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                                     </svg>
+                                                 </div>
+                                                <div>
+                                                    <div class="text-sm font-semibold text-neutral-900" x-text="product.name"></div>
+                                                    <div class="text-xs text-neutral-500" x-text="product.description"></div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" x-text="getCategoryName(product.category_id)"></span>
+                                        <td class="table__cell" :data-category-name="getCategoryName(product.category_id)">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800" x-text="getCategoryName(product.category_id)"></span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="'$' + product.price"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="product.min_stock"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <td class="table__cell" :data-price="product.price">
+                                            <span class="text-sm font-medium text-neutral-900">$<span x-text="product.price"></span></span>
+                                        </td>
+                                        <td class="table__cell" :data-min-stock="product.min_stock">
+                                            <span class="text-sm text-neutral-900" x-text="product.min_stock"></span>
+                                        </td>
+                                        <td class="table__cell" data-status="Activo">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-800">
                                                 Activo
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div class="flex space-x-2">
+                                        <td class="table__cell">
+                                            <div class="table-actions">
                                                 <template x-if="canViewProducts">
-                                                    <button @click="viewProduct(product)" 
-                                                            class="text-blue-600 hover:text-blue-900">
-                                                        Ver
-                                                    </button>
+                                                                                                         <button @click="viewProduct(product)" 
+                                                             class="table-action table-action--view"
+                                                             aria-label="Ver producto">
+                                                         <svg class="icon icon--sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" loading="lazy" decoding="async">
+                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                         </svg>
+                                                     </button>
                                                 </template>
                                                 <template x-if="canEditProducts">
                                                     <button @click="editProduct(product)" 
-                                                            class="text-indigo-600 hover:text-indigo-900">
-                                                        Editar
+                                                            class="table-action table-action--edit"
+                                                            data-action="edit"
+                                                            aria-label="Editar producto">
+                                                        <svg class="icon icon--sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                        </svg>
                                                     </button>
                                                 </template>
                                                 <template x-if="canDeleteProducts">
                                                     <button @click="deleteProduct(product.id)" 
-                                                            class="text-red-600 hover:text-red-900">
-                                                        Eliminar
+                                                            class="table-action table-action--delete"
+                                                            data-action="delete"
+                                                            aria-label="Eliminar producto">
+                                                        <svg class="icon icon--sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
                                                     </button>
                                                 </template>
                                             </div>
@@ -257,87 +357,184 @@
                         </table>
                     </div>
 
+                    <!-- Loading State -->
+                    <div x-show="loading" class="py-8">
+                        <div class="skeleton-table">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="skeleton skeleton-text"></div>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="skeleton skeleton-text"></div>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="skeleton skeleton-text"></div>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="skeleton skeleton-text"></div>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="skeleton skeleton-text"></div>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="skeleton skeleton-text"></div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="i in 5" :key="i">
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="skeleton-avatar"></div>
+                                                    <div class="ml-4">
+                                                        <div class="skeleton skeleton-text"></div>
+                                                        <div class="skeleton skeleton-text"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="skeleton skeleton-text"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="skeleton skeleton-text"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="skeleton skeleton-text"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="skeleton skeleton-text"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="skeleton skeleton-button"></div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- Empty State -->
-                    <div x-show="filteredProducts.length === 0" class="text-center py-12">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">No hay productos</h3>
-                        <p class="mt-1 text-sm text-gray-500" x-text="searchTerm ? 'No se encontraron productos con esa búsqueda.' : 'Comienza creando tu primer producto.'"></p>
+                    <div x-show="!loading && filteredProducts.length === 0" class="empty-state">
+                        <div class="empty-state-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </div>
+                        <h3 class="empty-state-title" x-text="searchTerm ? 'No se encontraron productos' : 'No hay productos'"></h3>
+                        <p class="empty-state-description" x-text="searchTerm ? 'No se encontraron productos que coincidan con tu búsqueda. Intenta con otros términos.' : 'Comienza agregando tu primer producto al inventario.'"></p>
                         <template x-if="canCreateProducts && !searchTerm">
-                            <div class="mt-6">
+                            <div class="empty-state-action">
                                 <button @click="showCreateModal = true" 
-                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                                    Nuevo Producto
+                                        class="btn-primary">
+                                    Agregar tu primer producto
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="searchTerm">
+                            <div class="empty-state-action">
+                                <button @click="searchTerm = ''" 
+                                        class="btn-secondary">
+                                    Limpiar búsqueda
                                 </button>
                             </div>
                         </template>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     </main>
 
-    <!-- Create/Edit Product Modal -->
-    <div x-show="showCreateModal || showEditModal" 
-         class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 mb-4" x-text="showEditModal ? 'Editar Producto' : 'Nuevo Producto'"></h3>
+            <!-- Create/Edit Product Modal -->
+        <div x-show="showCreateModal || showEditModal"
+             class="modal-layout"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             role="dialog" aria-modal="true" aria-labelledby="product-modal-title" aria-describedby="product-modal-description"
+             @keydown.escape="closeModal()">
+            <div class="modal-content">
+            <div class="modal__header">
+                <h2 id="product-modal-title" class="modal__title" x-text="showEditModal ? 'Editar Producto' : 'Nuevo Producto'"></h2>
+                <button @click="closeModal()" class="modal__close" aria-label="Cerrar modal">
+                    <svg class="modal__close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal__body">
+                <p id="product-modal-description" class="sr-only">Formulario para crear o editar un producto en el inventario</p>
                 
-                <form @submit.prevent="showEditModal ? updateProduct() : createProduct()" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Nombre</label>
-                        <input type="text" x-model="productForm.name" required
-                               class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <form @submit.prevent="showEditModal ? updateProduct() : createProduct()" class="form-layout" role="form" aria-label="Formulario de producto">
+                    <div class="form-group">
+                        <label for="product-name" class="form-label required">Nombre del producto</label>
+                        <input type="text" id="product-name" name="name" x-model="productForm.name" required
+                               minlength="2" maxlength="100"
+                               class="input input--md"
+                               aria-describedby="product-name-help">
+                        <div id="product-name-help" class="help-text">Ingresa el nombre del producto (mínimo 2 caracteres)</div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Descripción</label>
-                        <textarea x-model="productForm.description" rows="3"
-                                  class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <div class="form-group">
+                        <label for="product-description" class="form-label">Descripción</label>
+                        <textarea id="product-description" name="description" x-model="productForm.description" rows="3"
+                                  maxlength="500"
+                                  class="input input--md"
+                                  aria-describedby="product-description-help"></textarea>
+                        <div id="product-description-help" class="help-text">Descripción opcional del producto (máximo 500 caracteres)</div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Precio</label>
-                        <input type="number" x-model="productForm.price" step="0.01" required
-                               class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="form-group">
+                        <label for="product-price" class="form-label required">Precio</label>
+                        <input type="number" id="product-price" name="price" x-model="productForm.price" step="0.01" required min="0" max="999999.99"
+                               class="input input--md"
+                               aria-describedby="product-price-help">
+                        <div id="product-price-help" class="help-text">Precio en pesos (ej: 100.50)</div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Categoría</label>
-                        <select x-model="productForm.category_id" required
-                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="form-group">
+                        <label for="product-category" class="form-label required">Categoría</label>
+                        <select id="product-category" name="category_id" x-model="productForm.category_id" required
+                                class="input input--md"
+                                aria-describedby="product-category-help">
                             <option value="">Seleccionar categoría</option>
                             <template x-for="category in categories" :key="category.id">
                                 <option :value="category.id" x-text="category.name"></option>
                             </template>
                         </select>
+                        <div id="product-category-help" class="help-text">Selecciona la categoría del producto</div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Stock Mínimo</label>
-                        <input type="number" x-model="productForm.min_stock" min="0" required
-                               class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    
-                    <div class="flex justify-end space-x-3 pt-4">
-                        <button type="button" @click="closeModal()"
-                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
-                            Cancelar
-                        </button>
-                        <button type="submit" 
-                                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                            <span x-text="showEditModal ? 'Actualizar' : 'Crear'"></span>
-                        </button>
+                    <div class="form-group">
+                        <label for="product-min-stock" class="form-label required">Stock Mínimo</label>
+                        <input type="number" id="product-min-stock" name="min_stock" x-model="productForm.min_stock" min="0" max="9999" required
+                               class="input input--md"
+                               aria-describedby="product-min-stock-help">
+                        <div id="product-min-stock-help" class="help-text">Cantidad mínima de stock antes de alertar</div>
                     </div>
                 </form>
+            </div>
+            
+            <div class="modal__footer">
+                <button type="button" @click="closeModal()"
+                        class="btn btn--secondary"
+                        :disabled="saving">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="btn btn--primary"
+                        :class="{ 'btn--loading': saving }"
+                        :disabled="saving">
+                    <span x-show="!saving" x-text="showEditModal ? 'Actualizar' : 'Crear'"></span>
+                    <span x-show="saving" x-text="showEditModal ? 'Actualizando...' : 'Creando...'"></span>
+                </button>
             </div>
         </div>
     </div>
@@ -630,5 +827,14 @@
             }
         }
     </script>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p class="text-sm">&copy; 2024 Sistema de Gestión de Inventario. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

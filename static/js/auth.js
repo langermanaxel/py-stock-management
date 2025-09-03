@@ -1,9 +1,9 @@
 // Sistema de Autenticación JWT para el Frontend
 class JWTAuthManager {
     constructor() {
-        this.token = localStorage.getItem('jwt_token');
-        this.refreshToken = localStorage.getItem('jwt_refresh_token');
-        this.user = JSON.parse(localStorage.getItem('user_info') || 'null');
+        this.token = localStorage.getItem('access_token');
+        this.refreshToken = localStorage.getItem('refresh_token');
+        this.user = JSON.parse(localStorage.getItem('user') || 'null');
         
         // Configuración de URL base
         // Como Flask sirve tanto el frontend como la API desde el mismo puerto (5000)
@@ -59,7 +59,7 @@ class JWTAuthManager {
      */
     async authenticatedRequest(url, options = {}) {
         if (!this.token) {
-            this.logout();
+            await this.logout();
             return null;
         }
 
@@ -226,14 +226,27 @@ class JWTAuthManager {
             const data = await this.parseResponse(response);
             
             if (data.access_token) {
+                // Validate JWT token before storing
+                if (window.jwtValidator) {
+                    const validation = window.jwtValidator.validateToken(data.access_token);
+                    if (!validation.valid) {
+                        throw new Error('Token inválido recibido del servidor');
+                    }
+                }
+                
                 this.token = data.access_token;
                 this.refreshToken = data.refresh_token;
                 this.user = data.user;
                 
                 // Guardar en localStorage
-                localStorage.setItem('jwt_token', this.token);
-                localStorage.setItem('jwt_refresh_token', this.refreshToken);
-                localStorage.setItem('user_info', JSON.stringify(this.user));
+                localStorage.setItem('access_token', this.token);
+                localStorage.setItem('refresh_token', this.refreshToken);
+                localStorage.setItem('user', JSON.stringify(this.user));
+                
+                // Initialize session manager
+                if (window.sessionManager) {
+                    window.sessionManager.updateLastActivity();
+                }
                 
                 // Emitir evento de login exitoso
                 window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: this.user }));
@@ -263,7 +276,7 @@ class JWTAuthManager {
      */
     async refreshAccessToken() {
         if (!this.refreshToken) {
-            this.logout();
+            await this.logout();
             return false;
         }
 
@@ -285,8 +298,22 @@ class JWTAuthManager {
             const data = await this.parseResponse(response);
             
             if (data.access_token) {
+                // Validate new JWT token before storing
+                if (window.jwtValidator) {
+                    const validation = window.jwtValidator.validateToken(data.access_token);
+                    if (!validation.valid) {
+                        throw new Error('Nuevo token inválido recibido del servidor');
+                    }
+                }
+                
                 this.token = data.access_token;
-                localStorage.setItem('jwt_token', this.token);
+                localStorage.setItem('access_token', this.token);
+                
+                // Update session manager
+                if (window.sessionManager) {
+                    window.sessionManager.updateLastActivity();
+                }
+                
                 return true;
             } else {
                 throw new Error('Respuesta del servidor inválida: nuevo token no encontrado');
@@ -326,6 +353,40 @@ class JWTAuthManager {
     async initialize() {
         if (this.isAuthenticated() && this.isTokenExpiringSoon()) {
             await this.refreshAccessToken();
+        }
+    }
+
+    // Cerrar sesión
+    async logout() {
+        try {
+            // Use session manager for logout if available
+            if (window.sessionManager) {
+                await window.sessionManager.logout();
+            } else {
+                // Fallback: manual logout
+                this.token = null;
+                this.refreshToken = null;
+                this.user = null;
+                
+                // Limpiar localStorage
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('user');
+                
+                // Emitir evento de logout
+                window.dispatchEvent(new CustomEvent('userLoggedOut'));
+                
+                // Redirigir al login
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+            // Force logout
+            this.token = null;
+            this.refreshToken = null;
+            this.user = null;
+            localStorage.clear();
+            window.location.href = '/login';
         }
     }
 }
