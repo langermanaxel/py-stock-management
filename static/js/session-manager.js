@@ -103,23 +103,16 @@ class SessionManager {
     }
 
     /**
-     * Check initial session
+     * Check initial session - Usar sistema unificado
      */
     async checkInitialSession() {
         try {
-            // Check both session and JWT
-            const sessionValid = await this.checkWebSession();
-            const jwtValid = await this.checkJWTSession();
-            
-            if (!sessionValid || !jwtValid) {
-                // Solo manejar como expirada si hay tokens o sesión
-                const hasToken = localStorage.getItem('access_token');
-                const hasSession = document.cookie.includes('session');
+            // Usar el sistema unificado de autenticación
+            if (window.unifiedAuth) {
+                const isAuthenticated = window.unifiedAuth.isAuthenticated();
                 
-                if (hasToken || hasSession) {
-                    await this.handleSessionExpired();
-                } else {
-                    // Si no hay tokens ni sesión, solo redirigir si estamos en página protegida
+                if (!isAuthenticated) {
+                    // Solo redirigir si estamos en página protegida
                     const currentPath = window.location.pathname;
                     const protectedPaths = ['/dashboard', '/', '/index'];
                     
@@ -128,23 +121,44 @@ class SessionManager {
                         window.location.href = '/login';
                     }
                 }
+                return;
             }
-        } catch (error) {
-            console.error('Error checking initial session:', error);
-            // Solo manejar como expirada si hay tokens o sesión
-            const hasToken = localStorage.getItem('access_token');
-            const hasSession = document.cookie.includes('session');
             
-            if (hasToken || hasSession) {
-                await this.handleSessionExpired();
-            } else {
-                // Si no hay tokens ni sesión, solo redirigir si estamos en página protegida
+            // Fallback: verificación manual
+            const token = localStorage.getItem('access_token');
+            if (!token) {
                 const currentPath = window.location.pathname;
                 const protectedPaths = ['/dashboard', '/', '/index'];
                 
                 if (protectedPaths.includes(currentPath)) {
+                    console.log('No token found, redirecting to login');
                     window.location.href = '/login';
                 }
+                return;
+            }
+            
+            // Verificar si el token está expirado
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Math.floor(Date.now() / 1000);
+                
+                if (payload.exp < now) {
+                    console.log('Token expired, redirecting to login');
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Error verificando token:', error);
+                window.location.href = '/login';
+            }
+            
+        } catch (error) {
+            console.error('Error checking initial session:', error);
+            // Solo redirigir si estamos en página protegida
+            const currentPath = window.location.pathname;
+            const protectedPaths = ['/dashboard', '/', '/index'];
+            
+            if (protectedPaths.includes(currentPath)) {
+                window.location.href = '/login';
             }
         }
     }
@@ -178,16 +192,30 @@ class SessionManager {
     }
 
     /**
-     * Check web session
+     * Check web session - Usar sistema unificado
      */
     async checkWebSession() {
         try {
-            const response = await fetch('/api/auth/session', {
-                method: 'GET',
-                credentials: 'include'
-            });
+            // Usar el sistema unificado de autenticación
+            if (window.unifiedAuth) {
+                return window.unifiedAuth.isAuthenticated();
+            }
             
-            return response.ok;
+            // Fallback: verificar token en localStorage
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                return false;
+            }
+            
+            // Verificar si el token está expirado
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Math.floor(Date.now() / 1000);
+                return payload.exp > now;
+            } catch (error) {
+                console.error('Error verificando token:', error);
+                return false;
+            }
         } catch (error) {
             console.error('Error checking web session:', error);
             return false;
@@ -195,20 +223,18 @@ class SessionManager {
     }
 
     /**
-     * Check JWT session
+     * Check JWT session - Usar sistema unificado
      */
     async checkJWTSession() {
         try {
+            // Usar el sistema unificado de autenticación
+            if (window.unifiedAuth) {
+                return window.unifiedAuth.isAuthenticated();
+            }
+            
+            // Fallback: verificar token manualmente
             const token = localStorage.getItem('access_token');
             if (!token) return false;
-
-            // Validate JWT token
-            if (window.jwtValidator) {
-                const validation = window.jwtValidator.validateToken(token);
-                if (!validation.valid) {
-                    return false;
-                }
-            }
 
             // Check expiration
             const payload = this.decodeJWT(token);
