@@ -24,8 +24,13 @@ class SessionManager {
         // Setup unified error handling
         this.setupUnifiedErrorHandling();
         
-        // Check initial session state
-        this.checkInitialSession();
+        // Solo verificar sesión inicial si hay tokens o sesión
+        const hasToken = localStorage.getItem('access_token');
+        const hasSession = document.cookie.includes('session');
+        
+        if (hasToken || hasSession) {
+            this.checkInitialSession();
+        }
     }
 
     /**
@@ -107,11 +112,40 @@ class SessionManager {
             const jwtValid = await this.checkJWTSession();
             
             if (!sessionValid || !jwtValid) {
-                await this.handleSessionExpired();
+                // Solo manejar como expirada si hay tokens o sesión
+                const hasToken = localStorage.getItem('access_token');
+                const hasSession = document.cookie.includes('session');
+                
+                if (hasToken || hasSession) {
+                    await this.handleSessionExpired();
+                } else {
+                    // Si no hay tokens ni sesión, solo redirigir si estamos en página protegida
+                    const currentPath = window.location.pathname;
+                    const protectedPaths = ['/dashboard', '/', '/index'];
+                    
+                    if (protectedPaths.includes(currentPath)) {
+                        console.log('No session found, redirecting to login');
+                        window.location.href = '/login';
+                    }
+                }
             }
         } catch (error) {
             console.error('Error checking initial session:', error);
-            await this.handleSessionExpired();
+            // Solo manejar como expirada si hay tokens o sesión
+            const hasToken = localStorage.getItem('access_token');
+            const hasSession = document.cookie.includes('session');
+            
+            if (hasToken || hasSession) {
+                await this.handleSessionExpired();
+            } else {
+                // Si no hay tokens ni sesión, solo redirigir si estamos en página protegida
+                const currentPath = window.location.pathname;
+                const protectedPaths = ['/dashboard', '/', '/index'];
+                
+                if (protectedPaths.includes(currentPath)) {
+                    window.location.href = '/login';
+                }
+            }
         }
     }
 

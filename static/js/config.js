@@ -13,7 +13,7 @@ const APP_CONFIG = {
         }
     },
     
-    // Credenciales de Demo
+    // Credenciales de Demo - ROLES ESTANDARIZADOS AL INGLÉS
     DEMO_CREDENTIALS: {
         admin: {
             username: 'admin',
@@ -21,13 +21,13 @@ const APP_CONFIG = {
             role: 'admin',
             description: 'Acceso completo a todas las funcionalidades'
         },
-        gerente: {
+        manager: {
             username: 'gerente',
             password: 'Gerente123!',
             role: 'manager',
             description: 'Gestión de inventario (sin eliminar)'
         },
-        usuario: {
+        user: {
             username: 'usuario',
             password: 'Usuario123!',
             role: 'user',
@@ -41,7 +41,7 @@ const APP_CONFIG = {
         }
     },
     
-    // Roles y permisos
+    // Roles y permisos - ESTANDARIZADOS Y COMPLETOS
     ROLES: {
         admin: {
             name: 'Administrador',
@@ -62,6 +62,11 @@ const APP_CONFIG = {
             name: 'Usuario',
             level: 1,
             permissions: ['read_limited']
+        },
+        viewer: {
+            name: 'Viewer',
+            level: 0,
+            permissions: ['read_only']
         }
     },
     

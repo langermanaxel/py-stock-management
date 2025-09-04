@@ -10,7 +10,7 @@ from app.database import db
 from app.models.category import Category
 from app.schemas.category import CategorySchema, CategoryUpdateSchema, CategoryListSchema
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.decorators import usuario_or_above_required, gerente_or_admin_required, admin_required
+from app.decorators import user_or_above_required, manager_or_admin_required, admin_required
 
 # Crear blueprint para categorías
 categories_blp = Blueprint(
@@ -25,7 +25,7 @@ class Categories(MethodView):
     
     @categories_blp.response(200, CategoryListSchema)
     @jwt_required()
-    @usuario_or_above_required
+    @user_or_above_required
     def get(self):
         """Listar todas las categorías"""
         try:
@@ -40,7 +40,7 @@ class Categories(MethodView):
     @categories_blp.arguments(CategorySchema)
     @categories_blp.response(201, CategorySchema)
     @jwt_required()
-    @gerente_or_admin_required
+    @manager_or_admin_required
     def post(self, category_data):
         """Crear nueva categoría"""
         try:
@@ -67,7 +67,7 @@ class CategoryById(MethodView):
     
     @categories_blp.response(200, CategorySchema)
     @jwt_required()
-    @usuario_or_above_required
+    @user_or_above_required
     def get(self, category_id):
         """Obtener categoría por ID"""
         try:
@@ -79,7 +79,7 @@ class CategoryById(MethodView):
     @categories_blp.arguments(CategoryUpdateSchema)
     @categories_blp.response(200, CategorySchema)
     @jwt_required()
-    @gerente_or_admin_required
+    @manager_or_admin_required
     def put(self, category_data, category_id):
         """Actualizar categoría"""
         try:

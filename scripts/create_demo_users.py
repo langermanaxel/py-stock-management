@@ -16,7 +16,7 @@ def create_demo_users():
         print("❌ Base de datos no encontrada")
         return
     
-    # Usuarios demo con credenciales correctas
+    # Usuarios demo con credenciales correctas - ROLES ESTANDARIZADOS AL INGLÉS
     demo_users = [
         {
             "username": "admin",
@@ -32,7 +32,7 @@ def create_demo_users():
             "email": "gerente@stockmanagement.com",
             "first_name": "Gerente",
             "last_name": "Sistema",
-            "role": "gerente"
+            "role": "manager"  # Estandarizado al inglés
         },
         {
             "username": "usuario",
@@ -40,7 +40,7 @@ def create_demo_users():
             "email": "usuario@stockmanagement.com",
             "first_name": "Usuario",
             "last_name": "Sistema",
-            "role": "usuario"
+            "role": "user"  # Estandarizado al inglés
         },
         {
             "username": "viewer",

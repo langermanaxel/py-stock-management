@@ -27,8 +27,11 @@ class AuthManager {
         // Setup error handling
         this.setupErrorHandling();
         
-        // Check initial session
-        this.checkInitialSession();
+        // Solo verificar sesión inicial si hay un token
+        const token = this.getAccessToken();
+        if (token) {
+            this.checkInitialSession();
+        }
     }
 
     /**
@@ -132,10 +135,32 @@ class AuthManager {
                 if (!isValid) {
                     await this.handleTokenExpired();
                 }
+            } else {
+                // Si no hay token, verificar si estamos en una página que requiere autenticación
+                const currentPath = window.location.pathname;
+                const protectedPaths = ['/dashboard', '/', '/index'];
+                
+                if (protectedPaths.includes(currentPath)) {
+                    // Solo redirigir si estamos en una página protegida
+                    console.log('No token found, redirecting to login');
+                    window.location.href = '/login';
+                }
             }
         } catch (error) {
             console.error('Error checking initial session:', error);
-            await this.handleTokenExpired();
+            // Solo manejar como expirada si hay un token
+            const token = this.getAccessToken();
+            if (token) {
+                await this.handleTokenExpired();
+            } else {
+                // Si no hay token, solo redirigir si estamos en página protegida
+                const currentPath = window.location.pathname;
+                const protectedPaths = ['/dashboard', '/', '/index'];
+                
+                if (protectedPaths.includes(currentPath)) {
+                    window.location.href = '/login';
+                }
+            }
         }
     }
 
@@ -190,27 +215,28 @@ class AuthManager {
      */
     async validateToken(token) {
         try {
+            console.log('🔍 AuthManager validando token:', token.substring(0, 50) + '...');
+            
             // Decode JWT to check expiration
             const payload = this.decodeJWT(token);
-            if (!payload) return false;
+            if (!payload) {
+                console.error('❌ No se pudo decodificar el token');
+                return false;
+            }
+
+            console.log('📋 Payload decodificado:', payload);
 
             // Check if token is expired
             const now = Math.floor(Date.now() / 1000);
             if (payload.exp && payload.exp < now) {
+                console.error('❌ Token expirado:', payload.exp, '<', now);
                 return false;
             }
 
-            // Optional: Make a lightweight API call to validate token
-            const response = await fetch('/api/auth/validate', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            return response.ok;
+            console.log('✅ Token válido según AuthManager');
+            return true;
         } catch (error) {
-            console.error('Error validating token:', error);
+            console.error('❌ Error validando token en AuthManager:', error);
             return false;
         }
     }

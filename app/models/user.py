@@ -32,31 +32,37 @@ class User(db.Model):
     # orders_created = db.relationship('Order', back_populates='created_by', lazy='dynamic', cascade='all, delete-orphan')
     # purchase_orders_created = db.relationship('PurchaseOrder', back_populates='created_by', lazy='dynamic', cascade='all, delete-orphan')
     
-    # Roles disponibles
+    # Roles disponibles - ESTANDARIZADOS AL INGLÉS
     ROLES = {
         'admin': 'Administrador',
         'manager': 'Gerente',
         'supervisor': 'Supervisor',
-        'user': 'Usuario'
+        'user': 'Usuario',
+        'viewer': 'Viewer'
     }
     
-    # Permisos por rol
+    # Permisos por rol - ESTANDARIZADOS Y COMPLETOS
     PERMISSIONS = {
         'admin': [
             'manage_users', 'manage_products', 'manage_categories',
             'manage_stock', 'manage_orders', 'manage_purchases',
-            'view_reports', 'manage_system'
+            'view_reports', 'manage_system', 'all'
         ],
         'manager': [
             'manage_products', 'manage_categories', 'manage_stock',
-            'manage_orders', 'manage_purchases', 'view_reports'
+            'manage_orders', 'manage_purchases', 'view_reports',
+            'read', 'create', 'update'
         ],
         'supervisor': [
             'manage_products', 'manage_stock', 'manage_orders',
-            'view_reports'
+            'view_reports', 'read', 'create_orders'
         ],
         'user': [
-            'view_products', 'view_stock', 'create_orders'
+            'view_products', 'view_stock', 'create_orders',
+            'read_limited'
+        ],
+        'viewer': [
+            'read_only', 'view_dashboard'
         ]
     }
     

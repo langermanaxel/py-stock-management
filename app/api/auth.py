@@ -64,6 +64,47 @@ def get_user_by_username_direct(username):
         print(f"Error en get_user_by_username_direct: {e}")
         return None
 
+def get_user_by_id_direct(user_id):
+    """Obtiene usuario por ID usando SQLite directo"""
+    try:
+        db_path = Path("instance/stock_management.db")
+        if not db_path.exists():
+            return None
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, username, email, password_hash, first_name, last_name, 
+                   role, is_active, created_at, updated_at, last_login
+            FROM users 
+            WHERE id = ? AND is_active = 1
+        """, (user_id,))
+        
+        user_data = cursor.fetchone()
+        conn.close()
+        
+        if user_data:
+            return {
+                'id': user_data[0],
+                'username': user_data[1],
+                'email': user_data[2],
+                'password_hash': user_data[3],
+                'first_name': user_data[4],
+                'last_name': user_data[5],
+                'role': user_data[6],
+                'is_active': bool(user_data[7]),
+                'created_at': user_data[8],
+                'updated_at': user_data[9],
+                'last_login': user_data[10]
+            }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error en get_user_by_id_direct: {e}")
+        return None
+
 def update_last_login_direct(user_id):
     """Actualiza last_login usando SQLite directo"""
     try:
@@ -166,21 +207,63 @@ class Refresh(MethodView):
         """Refrescar token de acceso"""
         try:
             current_user_id = get_jwt_identity()
-            user = User.query.get(current_user_id)
+            print(f"🔄 Refrescando token para usuario: {current_user_id}")
             
-            if not user or not user.is_active:
-                abort(401, message="Usuario no válido")
+            # Obtener datos del usuario usando SQLite directo
+            user = get_user_by_id_direct(current_user_id)
+            if not user or not user['is_active']:
+                print(f"❌ Usuario no válido o inactivo: {current_user_id}")
+                abort(401, message="Usuario no válido o inactivo")
             
             new_access_token = create_access_token(
-                identity=str(current_user_id),  # Convertir a string para PyJWT 2.x
-                additional_claims={"role": user.role, "username": user.username}
+                identity=str(current_user_id),
+                additional_claims={"role": user['role'], "username": user['username']}
             )
             
+            print(f"✅ Token refrescado exitosamente para usuario: {user['username']}")
+            
             return {
-                "access_token": new_access_token
+                "access_token": new_access_token,
+                "message": "Token refrescado exitosamente"
             }
-        except SQLAlchemyError as e:
-            abort(500, message=f"Error de base de datos: {str(e)}")
+        except Exception as e:
+            print(f"❌ Error refrescando token: {e}")
+            abort(500, message="Error interno del servidor")
+
+@auth_blp.route("/validate")
+class Validate(MethodView):
+    """Endpoint para validar token"""
+    
+    @auth_blp.response(200, description="Token válido")
+    @jwt_required()
+    def get(self):
+        """Validar token de acceso"""
+        try:
+            current_user_id = get_jwt_identity()
+            print(f"🔍 Validando token para usuario: {current_user_id}")
+            
+            # Obtener datos del usuario usando SQLite directo
+            user = get_user_by_id_direct(current_user_id)
+            if not user or not user['is_active']:
+                print(f"❌ Usuario no válido o inactivo: {current_user_id}")
+                abort(401, message="Usuario no válido o inactivo")
+            
+            print(f"✅ Token válido para usuario: {user['username']}")
+            
+            return {
+                "valid": True,
+                "user": {
+                    "id": user['id'],
+                    "username": user['username'],
+                    "role": user['role'],
+                    "is_active": user['is_active']
+                },
+                "message": "Token válido"
+            }
+            
+        except Exception as e:
+            print(f"❌ Error validando token: {e}")
+            abort(401, message="Token inválido")
 
 @auth_blp.route("/profile")
 class Profile(MethodView):

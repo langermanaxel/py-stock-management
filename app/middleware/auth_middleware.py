@@ -9,6 +9,7 @@ from flask import request, jsonify, current_app
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 import sqlite3
 from pathlib import Path
+from app.core.permissions import PermissionManager, Permission, Role
 
 def get_user_by_id_direct(user_id):
     """Obtiene usuario por ID usando SQLite directo"""
@@ -74,7 +75,7 @@ def require_auth(f):
     return decorated_function
 
 def require_permission(permission):
-    """Decorador para requerir permisos específicos"""
+    """Decorador para requerir permisos específicos - USANDO SISTEMA CENTRALIZADO"""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -86,17 +87,28 @@ def require_permission(permission):
                 if not current_user or not current_user['is_active']:
                     return jsonify({'error': 'Usuario no válido o inactivo'}), 401
                 
-                # Verificar permisos basados en rol
+                # Usar el sistema centralizado de permisos
                 user_role = current_user['role']
                 
-                if permission == 'admin' and user_role != 'admin':
-                    return jsonify({'error': 'Se requiere rol de administrador'}), 403
-                elif permission == 'gerente' and user_role not in ['admin', 'gerente']:
-                    return jsonify({'error': 'Se requiere rol de gerente o superior'}), 403
-                elif permission == 'usuario' and user_role not in ['admin', 'gerente', 'usuario']:
-                    return jsonify({'error': 'Se requiere rol de usuario o superior'}), 403
-                elif permission == 'viewer' and user_role not in ['admin', 'gerente', 'usuario', 'viewer']:
-                    return jsonify({'error': 'Se requiere rol de viewer o superior'}), 403
+                # Mapear permisos antiguos a nuevos
+                permission_mapping = {
+                    'admin': Permission.MANAGE_SYSTEM,
+                    'manager': Permission.MANAGE_PRODUCTS,
+                    'supervisor': Permission.MANAGE_ORDERS,
+                    'user': Permission.CREATE_ORDERS,
+                    'viewer': Permission.READ_ONLY,
+                    'write': Permission.CREATE,
+                    'delete': Permission.DELETE
+                }
+                
+                required_permission = permission_mapping.get(permission, Permission.READ)
+                
+                if not PermissionManager.has_permission(user_role, required_permission):
+                    return jsonify({
+                        'error': f'Permiso insuficiente: {permission}',
+                        'required_permission': permission,
+                        'user_role': user_role
+                    }), 403
                 
                 request.current_user = current_user
                 return f(*args, **kwargs)
@@ -147,48 +159,8 @@ def require_viewer(f):
     return require_permission('viewer')(f)
 
 def can_access_endpoint(endpoint, user_role):
-    """Verifica si un usuario puede acceder a un endpoint específico"""
-    # Mapeo de endpoints a roles mínimos requeridos
-    endpoint_permissions = {
-        # Endpoints de administración (solo admin)
-        '/api/users/': 'admin',
-        '/api/system/': 'admin',
-        '/api/backup/': 'admin',
-        
-        # Endpoints de gestión (admin y gerente)
-        '/api/products/': 'gerente',
-        '/api/categories/': 'gerente',
-        '/api/stock/': 'gerente',
-        '/api/orders/': 'gerente',
-        '/api/purchases/': 'gerente',
-        
-        # Endpoints de usuario (admin, gerente, usuario)
-        '/api/profile/': 'usuario',
-        '/api/reports/': 'usuario',
-        
-        # Endpoints de visualización (todos los roles)
-        '/api/dashboard/': 'viewer',
-        '/api/analytics/': 'viewer'
-    }
-    
-    # Buscar el permiso más restrictivo para el endpoint
-    for path, required_role in endpoint_permissions.items():
-        if endpoint.startswith(path):
-            # Verificar jerarquía de roles
-            role_hierarchy = {
-                'viewer': 1,
-                'usuario': 2,
-                'gerente': 3,
-                'admin': 4
-            }
-            
-            user_level = role_hierarchy.get(user_role, 0)
-            required_level = role_hierarchy.get(required_role, 0)
-            
-            return user_level >= required_level
-    
-    # Por defecto, permitir acceso a usuarios autenticados
-    return True
+    """Verifica si un usuario puede acceder a un endpoint específico - USANDO SISTEMA CENTRALIZADO"""
+    return PermissionManager.can_access_endpoint(user_role, endpoint)
 
 def log_user_action(action):
     """Decorador para registrar acciones de usuario"""

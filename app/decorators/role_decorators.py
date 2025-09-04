@@ -69,17 +69,21 @@ def admin_required(fn):
     """Decorador que requiere rol de administrador"""
     return roles_required("admin")(fn)
 
-def gerente_or_admin_required(fn):
-    """Decorador que requiere rol de gerente o administrador"""
-    return roles_required("admin", "gerente")(fn)
+def manager_or_admin_required(fn):
+    """Decorador que requiere rol de manager o administrador"""
+    return roles_required("admin", "manager")(fn)
 
-def usuario_or_above_required(fn):
-    """Decorador que requiere rol de usuario o superior"""
-    return roles_required("admin", "gerente", "usuario")(fn)
+def supervisor_or_above_required(fn):
+    """Decorador que requiere rol de supervisor o superior"""
+    return roles_required("admin", "manager", "supervisor")(fn)
+
+def user_or_above_required(fn):
+    """Decorador que requiere rol de user o superior"""
+    return roles_required("admin", "manager", "supervisor", "user")(fn)
 
 def viewer_or_above_required(fn):
     """Decorador que requiere rol de viewer o superior"""
-    return roles_required("admin", "gerente", "usuario", "viewer")(fn)
+    return roles_required("admin", "manager", "supervisor", "user", "viewer")(fn)
 
 def active_user_required(fn):
     """

@@ -132,8 +132,7 @@
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/config.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/http-helper.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/unified-auth.js') }}"></script>
     
     <script>
         function loginForm() {
@@ -163,56 +162,32 @@
                     this.loading = true;
                     
                     try {
-                        const response = await fetch('/api/auth/login', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(this.form),
-                            credentials: 'include' // Include cookies for web session
-                        });
+                        console.log('🔐 Iniciando login con sistema unificado...');
                         
-                        const data = await response.json();
+                        // Usar el sistema de autenticación unificado
+                        const result = await window.unifiedAuth.login(this.form.username, this.form.password);
                         
-                        if (response.ok) {
-                            // Validate JWT token before storing
-                            if (window.jwtValidator && data.access_token) {
-                                const validation = window.jwtValidator.validateToken(data.access_token);
-                                if (!validation.valid) {
-                                    this.showAlert('error', 'Token inválido. Intenta nuevamente.');
-                                    return;
-                                }
-                            }
-                            
-                            // Guardar token y datos del usuario
-                            localStorage.setItem('access_token', data.access_token);
-                            localStorage.setItem('refresh_token', data.refresh_token);
-                            localStorage.setItem('user', JSON.stringify(data.user));
-                            
-                            // Initialize session manager
-                            if (window.sessionManager) {
-                                window.sessionManager.updateLastActivity();
-                            }
-                            
-                            this.showAlert('success', 'Login exitoso! Redirigiendo...');
-                            
-                            // Redirigir al dashboard
-                            setTimeout(() => {
-                                window.location.href = '/dashboard';
-                            }, 1000);
-                        } else {
-                            // Handle specific error types
-                            if (response.status === 401) {
-                                this.showAlert('error', 'Credenciales inválidas. Verifica tu usuario y contraseña.');
-                            } else if (response.status === 429) {
-                                this.showAlert('error', 'Demasiados intentos. Espera unos minutos antes de intentar nuevamente.');
-                            } else {
-                                this.showAlert('error', data.message || 'Error en el login');
-                            }
-                        }
+                        console.log('✅ Login exitoso:', result);
+                        this.showAlert('success', 'Login exitoso! Redirigiendo...');
+                        
+                        // Redirigir al dashboard
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 1000);
+                        
                     } catch (error) {
-                        console.error('Login error:', error);
-                        this.showAlert('error', 'Error de conexión. Intenta nuevamente.');
+                        console.error('❌ Error en login:', error);
+                        
+                        // Manejar diferentes tipos de errores
+                        if (error.message.includes('Credenciales inválidas')) {
+                            this.showAlert('error', 'Credenciales inválidas. Verifica tu usuario y contraseña.');
+                        } else if (error.message.includes('Usuario desactivado')) {
+                            this.showAlert('error', 'Tu cuenta ha sido desactivada. Contacta al administrador.');
+                        } else if (error.message.includes('Error de conexión')) {
+                            this.showAlert('error', 'Error de conexión. Verifica tu conexión a internet.');
+                        } else {
+                            this.showAlert('error', error.message || 'Error en el login. Intenta nuevamente.');
+                        }
                     } finally {
                         this.loading = false;
                     }

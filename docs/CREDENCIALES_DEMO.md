@@ -9,14 +9,14 @@
 - **Permisos:** Acceso completo a todas las funcionalidades
 - **Funciones:** Gestión de usuarios, productos, categorías, stock, órdenes, compras, reportes
 
-### 🏢 **Gerente**
+### 🏢 **Gerente (Manager)**
 - **Username:** `gerente`
 - **Password:** `Gerente123!`
 - **Rol:** `manager`
 - **Permisos:** Gestión de productos, categorías, stock, órdenes, compras, reportes
 - **Funciones:** Puede crear, actualizar y gestionar inventario, pero no puede eliminar ni gestionar usuarios
 
-### 👤 **Usuario Normal**
+### 👤 **Usuario Normal (User)**
 - **Username:** `usuario`
 - **Password:** `Usuario123!`
 - **Rol:** `user`

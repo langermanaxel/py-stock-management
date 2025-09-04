@@ -38,9 +38,10 @@ def create_app():
     app.config['JWT_ACCESS_CSRF_HEADER_NAME'] = 'X-CSRF-TOKEN'
     app.config['JWT_REFRESH_CSRF_HEADER_NAME'] = 'X-CSRF-TOKEN'
     
-    # Deshabilitar verificación automática de JWT para ciertos endpoints
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False
-    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = False
+    # Configurar expiración de tokens JWT
+    from datetime import timedelta
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)  # 1 hora
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)  # 7 días
     
     # Crear un decorador personalizado para excluir endpoints de JWT
     def jwt_optional_if_no_token(f):

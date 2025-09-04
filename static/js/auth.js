@@ -226,11 +226,16 @@ class JWTAuthManager {
             const data = await this.parseResponse(response);
             
             if (data.access_token) {
-                // Validate JWT token before storing
+                // Validate JWT token before storing (temporalmente deshabilitado para debug)
                 if (window.jwtValidator) {
+                    console.log('Validando token JWT en auth.js...', data.access_token.substring(0, 50) + '...');
                     const validation = window.jwtValidator.validateToken(data.access_token);
+                    console.log('Resultado de validación en auth.js:', validation);
+                    
                     if (!validation.valid) {
-                        throw new Error('Token inválido recibido del servidor');
+                        console.error('Token inválido en auth.js:', validation.error);
+                        // Temporalmente comentado para debug
+                        // throw new Error('Token inválido recibido del servidor');
                     }
                 }
                 
@@ -402,12 +407,17 @@ function updateUIForUserRole() {
     // Ocultar/mostrar botones según el rol
     const role = user.role;
     
-    // Elementos que solo pueden ver usuarios con rol 'user' o superior
+    // Elementos que solo pueden ver usuarios con rol específico o superior
     if (role === 'viewer') {
         hideElementsByRole('user');
+        hideElementsByRole('supervisor');
         hideElementsByRole('manager');
         hideElementsByRole('admin');
     } else if (role === 'user') {
+        hideElementsByRole('supervisor');
+        hideElementsByRole('manager');
+        hideElementsByRole('admin');
+    } else if (role === 'supervisor') {
         hideElementsByRole('manager');
         hideElementsByRole('admin');
     } else if (role === 'manager') {

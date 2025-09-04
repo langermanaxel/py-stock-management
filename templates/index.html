@@ -318,12 +318,12 @@
         </main>
     </div>
 
-    <!-- Incluir configuración y sistema de autenticación JWT -->
+    <!-- Sistema de Autenticación Unificado -->
     <!-- 1. Configuración (debe cargarse primero) -->
     <script defer src="{{ url_for('static', filename='js/config.js') }}"></script>
     
-    <!-- 2. Sistema de autenticación JWT -->
-    <script defer src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <!-- 2. Sistema de autenticación unificado -->
+    <script defer src="{{ url_for('static', filename='js/unified-auth.js') }}"></script>
     
     <!-- 3. Helper HTTP -->
     <script defer src="{{ url_for('static', filename='js/http-helper.js') }}"></script>
@@ -338,7 +338,7 @@
     <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
     
     <script>
-        // Inicialización segura con guardias por página
+        // Inicialización segura con sistema de autenticación unificado
         document.addEventListener('DOMContentLoaded', async function() {
             // Crear instancia del guardia del DOM
             const guard = new DOMGuard();
@@ -346,14 +346,16 @@
             // Solo ejecutar en el dashboard
             guard.executeOnDashboard(async () => {
                 try {
-                    // Verificar si el usuario está autenticado
-                    if (!authManager.isAuthenticated()) {
+                    console.log('🔐 Verificando autenticación con sistema unificado...');
+                    
+                    // Verificar si el usuario está autenticado usando el sistema unificado
+                    if (!window.unifiedAuth.isAuthenticated()) {
+                        console.log('❌ Usuario no autenticado, redirigiendo al login');
                         window.location.href = '/login';
                         return;
                     }
                     
-                    // Inicializar el manager de autenticación
-                    await authManager.initialize();
+                    console.log('✅ Usuario autenticado:', window.unifiedAuth.getUser());
                     
                     // Mostrar información del usuario
                     updateUserInfo();
@@ -364,7 +366,7 @@
                     // Cargar datos iniciales
                     loadDashboard();
                 } catch (error) {
-                    console.error('Error inicializando dashboard:', error);
+                    console.error('❌ Error inicializando dashboard:', error);
                 }
             });
         });
@@ -373,7 +375,7 @@
         function updateUserInfo() {
             const guard = new DOMGuard();
             guard.safeExecute('#userName', (userNameElement) => {
-                const user = authManager.getUser();
+                const user = window.unifiedAuth.getUser();
                 if (user && userNameElement) {
                     userNameElement.textContent = `${user.first_name} ${user.last_name}`;
                     
@@ -405,8 +407,17 @@
         // Función para logout (solo en dashboard)
         function logout() {
             const guard = new DOMGuard();
-            guard.executeOnDashboard(() => {
-                authManager.logout();
+            guard.executeOnDashboard(async () => {
+                try {
+                    console.log('🚪 Iniciando logout...');
+                    await window.unifiedAuth.logout();
+                    console.log('✅ Logout exitoso');
+                } catch (error) {
+                    console.error('❌ Error en logout:', error);
+                    // Limpiar datos locales aunque falle el logout del servidor
+                    window.unifiedAuth.clearSession();
+                    window.location.href = '/login';
+                }
             });
         }
     </script>
