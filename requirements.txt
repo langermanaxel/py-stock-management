@@ -27,7 +27,7 @@ click==8.1.7
 # 🎨 Herramientas de calidad de código
 black==23.11.0
 flake8==6.1.0
-isort==5.12.0
+isort==6.0.1
 
 # 🔒 Herramientas de seguridad
 bandit==1.7.5
