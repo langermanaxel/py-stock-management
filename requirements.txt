@@ -8,7 +8,7 @@ python-dotenv==1.0.0
 requests==2.31.0
 
 # 🔐 Autenticación y Seguridad
-PyJWT==2.8.0
+PyJWT==2.10.1
 Flask-JWT-Extended==4.5.3
 bcrypt==4.1.2
 cryptography==41.0.7
