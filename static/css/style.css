@@ -646,13 +646,15 @@ textarea:focus-visible {
 }
 
 @media (min-width: 768px) {
-    .md\:flex { display: flex; }
-    .md\:hidden { display: none; }
+    .md\:flex { display: flex !important; }
+    .md\:hidden { display: none !important; }
 }
 
 @media (min-width: 1024px) {
     .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
     .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lg\:flex { display: flex; }
+    .lg\:hidden { display: none; }
 }
 
 /* Z-index */
