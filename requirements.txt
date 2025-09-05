@@ -11,7 +11,7 @@ requests==2.31.0
 PyJWT==2.8.0
 Flask-JWT-Extended==4.5.3
 bcrypt==4.1.2
-cryptography==41.0.7
+cryptography==45.0.6
 
 # 📚 Documentación API
 flask-smorest==0.42.0
